@@ -1,0 +1,10 @@
+<h1>Chamado</h1>
+
+{% for r in respostas %}
+    <p><b>{{ r[2] }}:</b> {{ r[3] }} ({{ r[4] }})</p>
+{% endfor %}
+
+<form method="POST">
+    <input name="mensagem" placeholder="Responder">
+    <button type="submit">Enviar</button>
+</form>

@@ -1,0 +1,70 @@
+import os
+
+from flask import (
+    Flask,
+    render_template,
+    redirect,
+    session,
+    flash,
+    request
+)
+
+from database import (
+    criar_tabela_usuarios,
+    criar_tabela_chamados,
+    criar_tabela_historico,
+    criar_tabela_comentarios,
+    adicionar_coluna_data_limite,
+    criar_tabela_anexos
+)
+
+from routes.auth import auth
+from routes.chamados import chamados
+from routes.admin import admin
+
+app = Flask(__name__)
+
+app.secret_key = "sistema_chamados"
+
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+
+os.makedirs(
+    "uploads",
+    exist_ok=True
+)
+
+app.register_blueprint(auth)
+app.register_blueprint(chamados)
+app.register_blueprint(admin)
+
+
+# Criar tabelas
+criar_tabela_usuarios()
+criar_tabela_chamados()
+criar_tabela_historico()
+criar_tabela_comentarios()
+adicionar_coluna_data_limite()
+criar_tabela_anexos()
+
+@app.route("/")
+def home():
+
+    if "usuario_id" in session:
+        return redirect("/dashboard")
+
+    return render_template("home.html")
+
+@app.errorhandler(413)
+def arquivo_muito_grande(error):
+
+    flash(
+        "Arquivo muito grande. Envie arquivos de até 5 MB.",
+        "warning"
+    )
+
+    return redirect(
+        request.referrer or "/dashboard"
+    )
+
+if __name__ == "__main__":
+    app.run(debug=True)

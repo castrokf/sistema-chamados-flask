@@ -1,0 +1,21 @@
+<h1>Meus Chamados</h1>
+
+<a href="/novo_chamado">Criar novo chamado</a>
+
+<ul>
+{% for c in chamados %}
+    <li>
+        <b>{{ c[1] }}</b> - {{ c[2] }} - {{ c[3] }}
+
+        <form method="POST" action="/chamado/{{ c[0] }}/status">
+            <select name="status">
+                <option value="aberto">Aberto</option>
+                <option value="andamento">Em andamento</option>
+                <option value="fechado">Fechado</option>
+            </select>
+            <button type="submit">Atualizar</button>
+        </form>
+
+    </li>
+{% endfor %}
+</ul>

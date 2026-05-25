@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+
+        <h1 class="fw-bold">
+            Chamado CH-{{ "%04d"|format(chamado[0]) }}
+        </h1>
+
+        <p class="text-muted">
+            Detalhes e acompanhamento do chamado.
+        </p>
+
+    </div>
+
+    {% if session.get("usuario_tipo") == "admin" %}
+
+        <a
+            href="/admin"
+            class="btn btn-outline-dark"
+        >
+            Voltar
+        </a>
+
+    {% else %}
+
+        <a
+            href="/meus_chamados"
+            class="btn btn-outline-dark"
+        >
+            Voltar
+        </a>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-8">
+
+                <h3 class="fw-bold mb-3">
+                    {{ chamado[1] }}
+                </h3>
+
+                <p class="text-muted">
+                    {{ chamado[2] }}
+                </p>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="mb-3">
+
+                    <strong>Status:</strong>
+
+                    <br>
+
+                    {% if chamado[3] == "Aberto" %}
+
+                        <span class="badge bg-danger">
+                            Aberto
+                        </span>
+
+                    {% elif chamado[3] == "Em andamento" %}
+
+                        <span class="badge bg-warning text-dark">
+                            Em andamento
+                        </span>
+
+                    {% elif chamado[3] == "Resolvido" %}
+
+                        <span class="badge bg-success">
+                            Resolvido
+                        </span>
+
+                    {% elif chamado[3] == "Encerrado" %}
+
+                        <span class="badge bg-secondary">
+                            Encerrado
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge bg-secondary">
+                            {{ chamado[3] }}
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <strong>Prioridade:</strong>
+
+                    <br>
+
+                    {% if chamado[4] == "Alta" %}
+
+                        <span class="badge bg-danger">
+                            Alta
+                        </span>
+
+                    {% elif chamado[4] == "Média" %}
+
+                        <span class="badge bg-warning text-dark">
+                            Média
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge bg-primary">
+                            Baixa
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <strong>Data de abertura:</strong>
+
+                    <br>
+
+                    {{ chamado[7] }}
+
+                </div>
+
+                <div class="mb-3">
+
+                    <strong>Prazo de atendimento:</strong>
+
+                    <br>
+
+                    {% if chamado[8] %}
+
+                        {{ chamado[8] }}
+
+                    {% else %}
+
+                        <span class="text-muted">
+                            Não definido
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            Resposta do suporte
+        </h4>
+
+        {% if chamado[6] %}
+
+            <div class="alert alert-light border">
+                {{ chamado[6] }}
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-secondary">
+                Nenhuma resposta até o momento.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            Anexos
+        </h4>
+
+        {% for anexo in anexos %}
+
+            <div class="d-flex justify-content-between align-items-center border rounded p-3 mb-3">
+
+                <div>
+
+                    <strong>
+                        {{ anexo[2] }}
+                    </strong>
+
+                    <br>
+
+                    <small class="text-muted">
+                        Enviado em {{ anexo[4] }}
+                    </small>
+
+                </div>
+
+                <a
+                    href="/anexo/{{ anexo[0] }}"
+                    target="_blank"
+                    class="btn btn-sm btn-outline-primary"
+                >
+                    Abrir arquivo
+                </a>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-secondary mb-0">
+                Nenhum anexo enviado.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+</div>
+
+
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            Comentários
+        </h4>
+
+        {% for comentario in comentarios %}
+
+            <div class="border rounded p-3 mb-3 bg-light">
+
+                <div class="d-flex justify-content-between">
+
+                    <strong>
+                        {{ comentario[1] }}
+                    </strong>
+
+                    <small class="text-muted">
+                        {{ comentario[4] }}
+                    </small>
+
+                </div>
+
+                <span class="badge bg-secondary mb-2">
+                    {{ comentario[2] }}
+                </span>
+
+                <p class="mb-0">
+                    {{ comentario[3] }}
+                </p>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-secondary">
+                Nenhum comentário ainda.
+            </div>
+
+        {% endfor %}
+
+        <hr>
+
+        {% if chamado[3] != "Encerrado" %}
+
+            <form method="POST">
+
+                <input
+                    type="hidden"
+                    name="acao"
+                    value="comentario"
+                >
+
+                <div class="mb-3">
+
+                    <label class="form-label">
+                        Novo comentário
+                    </label>
+
+                    <textarea
+                        name="mensagem"
+                        class="form-control"
+                        rows="4"
+                        required
+                    ></textarea>
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Enviar comentário
+                </button>
+
+            </form>
+
+        {% else %}
+
+            <div class="alert alert-warning">
+                Este chamado está encerrado e não aceita novos comentários.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            Histórico
+        </h4>
+
+        {% for item in historico %}
+
+            <div class="border-start border-4 ps-3 mb-4">
+
+                <h6 class="fw-bold">
+                    {{ item[2] }}
+                </h6>
+
+                <small class="text-muted">
+                    {{ item[3] }}
+                </small>
+
+            </div>
+
+        {% else %}
+
+            <div class="alert alert-secondary">
+                Nenhum histórico registrado.
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+{% if session.get("usuario_tipo") == "admin" %}
+
+<div class="card shadow-sm border-0">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            Painel Administrativo
+        </h4>
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="acao"
+                value="atualizar_chamado"
+            >
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Resposta
+                </label>
+
+                <textarea
+                    name="resposta"
+                    class="form-control"
+                    rows="6"
+                >{{ chamado[6] }}</textarea>
+
+            </div>
+
+            <div class="mb-4">
+
+                <label class="form-label">
+                    Status
+                </label>
+
+                <select
+                    name="status"
+                    class="form-select"
+                >
+
+                    <option value="Aberto" {% if chamado[3] == "Aberto" %}selected{% endif %}>
+                        Aberto
+                    </option>
+
+                    <option value="Em andamento" {% if chamado[3] == "Em andamento" %}selected{% endif %}>
+                        Em andamento
+                    </option>
+
+                    <option value="Resolvido" {% if chamado[3] == "Resolvido" %}selected{% endif %}>
+                        Resolvido
+                    </option>
+
+                    <option value="Encerrado" {% if chamado[3] == "Encerrado" %}selected{% endif %}>
+                        Encerrado
+                    </option>
+
+                </select>
+
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-success"
+            >
+                Atualizar Chamado
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}
