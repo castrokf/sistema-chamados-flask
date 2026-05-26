@@ -18,7 +18,12 @@ from database import (
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "chamados.db"
+DB_PATH = Path(
+    os.environ.get(
+        "DATABASE_PATH",
+        BASE_DIR / "chamados.db"
+    )
+)
 DEMO_PASSWORD = "Demo@1234"
 
 
@@ -83,6 +88,11 @@ def preparar_banco():
 
     if DB_PATH.exists():
         DB_PATH.unlink()
+
+    DB_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
     criar_tabela_usuarios()
     criar_tabela_chamados()
@@ -272,7 +282,7 @@ def inserir_chamados(cursor, ids):
                 )
 
 
-def main():
+def criar_banco_demo():
     preparar_banco()
 
     conexao = sqlite3.connect(DB_PATH)
@@ -283,6 +293,12 @@ def main():
 
     conexao.commit()
     conexao.close()
+
+    return DB_PATH
+
+
+def main():
+    criar_banco_demo()
 
     print("Banco ficticio criado com sucesso.")
     print("Usuarios: 1 admin, 2 suportes e 20 clientes.")

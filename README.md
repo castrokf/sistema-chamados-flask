@@ -88,6 +88,31 @@ python -m pytest
 
 Os testes usam um banco SQLite temporario e nao alteram o banco ficticio `chamados.db`.
 
+## Deploy demo
+
+O projeto inclui um `Procfile` para hospedagens que executam Flask com Gunicorn.
+
+Comando de build:
+
+```bash
+pip install -r requirements.txt
+```
+
+Comando de start:
+
+```bash
+gunicorn main:app
+```
+
+Variaveis de ambiente recomendadas:
+
+```text
+FLASK_SECRET_KEY=defina-uma-chave-secreta
+AUTO_SEED_DEMO=true
+```
+
+Quando `AUTO_SEED_DEMO=true`, a aplicacao cria a base ficticia automaticamente se o banco estiver vazio. Isso facilita publicar uma versao de demonstracao sem enviar o arquivo `chamados.db` para o repositorio.
+
 ## Observacoes
 
 - O banco `chamados.db` e criado automaticamente na primeira execucao.

@@ -24,6 +24,30 @@ from routes.auth import auth
 from routes.chamados import chamados
 from routes.admin import admin
 
+
+def auto_seed_demo():
+    if os.environ.get("AUTO_SEED_DEMO", "").lower() != "true":
+        return
+
+    from database import conectar
+    from seed_database import criar_banco_demo
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM usuarios
+    """)
+
+    total_usuarios = cursor.fetchone()[0]
+
+    conexao.close()
+
+    if total_usuarios == 0:
+        criar_banco_demo()
+
+
 app = Flask(__name__)
 
 app.secret_key = os.environ.get(
@@ -52,6 +76,7 @@ adicionar_coluna_data_limite()
 criar_tabela_anexos()
 adicionar_coluna_usuario_historico()
 adicionar_coluna_responsavel_chamado()
+auto_seed_demo()
 
 @app.route("/")
 def home():
