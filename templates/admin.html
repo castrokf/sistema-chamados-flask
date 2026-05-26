@@ -246,17 +246,17 @@
 
                 <tr>
 
-                    <td>
+                    <td data-label="ID">
                         <span class="badge text-bg-light border">
                             CH-{{ "%04d"|format(chamado[0]) }}
                         </span>
                     </td>
 
-                    <td>
+                    <td data-label="Título">
                         {{ chamado[1] }}
                     </td>
 
-                    <td>
+                    <td data-label="Status">
 
                         {% if chamado[2] == "Aberto" %}
 
@@ -292,7 +292,7 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Prioridade">
 
                         {% if chamado[3] == "Alta" %}
 
@@ -316,15 +316,15 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Usuário">
                         {{ chamado[4] }}
                     </td>
 
-                    <td>
+                    <td data-label="Data">
                         {{ chamado[5] }}
                     </td>
 
-                    <td>
+                    <td data-label="Prazo">
 
                         {% if chamado[7] == 1 %}
 
@@ -348,7 +348,7 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Responsável">
 
                         <form
                             method="POST"
@@ -389,7 +389,7 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Ação">
 
                         <a
                             href="/chamado/{{ chamado[0] }}"

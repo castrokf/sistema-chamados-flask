@@ -159,19 +159,19 @@
 
                 <tr>
 
-                    <td>
+                    <td data-label="ID">
                         #{{ usuario[0] }}
                     </td>
 
-                    <td>
+                    <td data-label="Nome">
                         {{ usuario[1] }}
                     </td>
 
-                    <td>
+                    <td data-label="Email">
                         {{ usuario[2] }}
                     </td>
 
-                    <td>
+                    <td data-label="Perfil">
 
                         {% if usuario[3] == "admin" %}
 
@@ -195,7 +195,7 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Ação">
 
                         {% if usuario[0] == session["usuario_id"] %}
 

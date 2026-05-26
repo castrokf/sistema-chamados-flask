@@ -99,17 +99,17 @@
 
                 <tr>
 
-                    <td>
+                    <td data-label="Chamado">
                         <span class="badge text-bg-light border">
                             Chamado {{ loop.index }}
                         </span>
                     </td>
 
-                    <td>
+                    <td data-label="Título">
                         {{ chamado[1] }}
                     </td>
 
-                    <td>
+                    <td data-label="Status">
 
                         {% if chamado[3] == "Aberto" %}
 
@@ -145,7 +145,7 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Prioridade">
 
                         {% if chamado[4] == "Alta" %}
 
@@ -169,11 +169,11 @@
 
                     </td>
 
-                    <td>
+                    <td data-label="Data">
                         {{ chamado[7] }}
                     </td>
 
-                    <td>
+                    <td data-label="Ação">
 
                         <a
                             href="/chamado/{{ chamado[0] }}"
