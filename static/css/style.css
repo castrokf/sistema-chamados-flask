@@ -614,10 +614,25 @@ h1.fw-bold {
 @media (max-width: 768px) {
     .public-card {
         padding: 34px 24px;
+        width: 100%;
     }
 
     .public-card h1 {
-        font-size: 2.3rem;
+        font-size: 2.05rem;
+        line-height: 1.12;
+        letter-spacing: 0;
+    }
+
+    .public-card p {
+        font-size: 1rem;
+    }
+
+    .public-actions {
+        flex-direction: column;
+    }
+
+    .public-actions .btn {
+        width: 100%;
     }
 }
 
@@ -725,5 +740,93 @@ textarea.form-control {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    h1.fw-bold {
+        font-size: 1.65rem;
+        letter-spacing: 0;
+    }
+
+    .content-area > .d-flex:first-child {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .content-area > .d-flex:first-child > div:last-child {
+        display: grid;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .content-area > .d-flex:first-child .btn {
+        width: 100%;
+        margin-right: 0 !important;
+    }
+
+    .card-body {
+        padding: 20px !important;
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 760px;
+    }
+
+    .row .card h2 {
+        font-size: 1.8rem;
+    }
+
+    .topbar-user {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .topbar-user span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .auth-card {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        padding: 18px 14px;
+    }
+
+    .sidebar-brand {
+        padding-bottom: 20px;
+    }
+
+    .sidebar-nav {
+        padding-top: 18px;
+    }
+
+    .content-area {
+        padding: 16px;
+    }
+
+    .auth-right {
+        padding: 16px;
+    }
+
+    .auth-card {
+        padding: 24px;
+        border-radius: 20px;
+    }
+
+    .public-layout {
+        padding: 18px;
+    }
+
+    .public-card {
+        padding: 28px 20px;
+        border-radius: 22px;
     }
 }
