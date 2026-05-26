@@ -401,7 +401,7 @@ def visualizar_chamado(id_chamado):
                 registrar_historico(
                     id_chamado,
                     usuario_logado,
-                    "Chamado reaberto pelo cliente",
+                    "Chamado reaberto pelo usuário",
                     data_comentario
                 )
 

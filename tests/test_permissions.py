@@ -31,6 +31,32 @@ def test_admin_acessa_painel_admin(client, login):
     assert "Painel Administrativo" in resposta.get_data(as_text=True)
 
 
+def test_admin_cria_acesso_interno(client, login, db_module):
+    login(
+        nome="Admin Teste",
+        email="admin@teste.com",
+        tipo="admin",
+    )
+
+    resposta = client.post(
+        "/admin/usuarios/criar",
+        data={
+            "nome": "Usuário Interno",
+            "email": "usuario.interno@teste.com",
+            "senha": "Senha@123",
+            "tipo": "cliente",
+        },
+        follow_redirects=False,
+    )
+
+    usuario = db_module.buscar_usuario("usuario.interno@teste.com")
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/admin/usuarios"
+    assert usuario is not None
+    assert usuario[4] == "cliente"
+
+
 def test_cliente_nao_acessa_chamado_de_outro_usuario(client, login, create_user, db_module):
     dono = create_user(
         nome="Dono do Chamado",

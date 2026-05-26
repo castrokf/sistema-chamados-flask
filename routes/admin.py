@@ -10,6 +10,7 @@ from flask import (
 )
 
 from database import (
+    criar_usuario,
     listar_chamados_admin,
     listar_usuarios,
     atualizar_tipo_usuario,
@@ -21,6 +22,9 @@ from database import (
     atualizar_chamado
 )
 
+from argon2 import PasswordHasher
+from sqlite3 import IntegrityError
+
 from utils.decorators import (
     admin_required,
     equipe_required
@@ -31,6 +35,8 @@ admin = Blueprint(
     "admin",
     __name__
 )
+
+ph = PasswordHasher()
 
 
 @admin.route("/admin")
@@ -68,6 +74,75 @@ def usuarios_admin():
         "usuarios_admin.html",
         usuarios=usuarios
     )
+
+
+@admin.route(
+    "/admin/usuarios/criar",
+    methods=["POST"]
+)
+@admin_required
+def criar_usuario_admin():
+
+    nome = request.form["nome"].strip()
+    email = request.form["email"].strip()
+    senha = request.form["senha"]
+    tipo = request.form["tipo"]
+
+    tipos_permitidos = [
+        "cliente",
+        "suporte",
+        "admin"
+    ]
+
+    if not nome or not email or not senha:
+
+        flash(
+            "Preencha nome, email e senha para criar o acesso.",
+            "warning"
+        )
+
+        return redirect("/admin/usuarios")
+
+    if len(senha) < 8:
+
+        flash(
+            "A senha temporária deve ter pelo menos 8 caracteres.",
+            "warning"
+        )
+
+        return redirect("/admin/usuarios")
+
+    if tipo not in tipos_permitidos:
+
+        flash(
+            "Tipo de usuário inválido.",
+            "danger"
+        )
+
+        return redirect("/admin/usuarios")
+
+    try:
+
+        criar_usuario(
+            nome,
+            email,
+            ph.hash(senha),
+            tipo
+        )
+
+        flash(
+            "Acesso interno criado com sucesso.",
+            "success"
+        )
+
+    except IntegrityError:
+
+        flash(
+            "Este email já está cadastrado.",
+            "danger"
+        )
+
+    return redirect("/admin/usuarios")
 
 
 @admin.route(

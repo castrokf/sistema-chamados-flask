@@ -8,13 +8,10 @@ from flask import (
 )
 
 from database import (
-    criar_usuario,
     buscar_usuario
 )
 
 from argon2 import PasswordHasher
-
-from sqlite3 import IntegrityError
 
 auth = Blueprint(
     "auth",
@@ -31,70 +28,12 @@ ph = PasswordHasher()
 )
 def register():
 
-    if request.method == "POST":
-
-        nome = request.form["nome"].strip()
-        email = request.form["email"].strip()
-        senha = request.form["senha"]
-        confirmar_senha = request.form["confirmar_senha"]
-
-        if not nome or not email or not senha:
-
-            flash(
-                "Preencha todos os campos.",
-                "warning"
-            )
-
-            return redirect("/register")
-
-        if senha != confirmar_senha:
-
-            flash(
-                "As senhas não coincidem.",
-                "danger"
-            )
-
-            return redirect("/register")
-
-        if len(senha) < 8:
-
-            flash(
-                "A senha deve ter pelo menos 8 caracteres.",
-                "warning"
-            )
-
-            return redirect("/register")
-
-        senha_hash = ph.hash(senha)
-
-        try:
-
-            criar_usuario(
-                nome,
-                email,
-                senha_hash,
-                "cliente"
-            )
-
-            flash(
-                "Conta criada com sucesso. Faça login para continuar.",
-                "success"
-            )
-
-            return redirect("/login")
-
-        except IntegrityError:
-
-            flash(
-                "Este email já está cadastrado.",
-                "danger"
-            )
-
-            return redirect("/register")
-
-    return render_template(
-        "register.html"
+    flash(
+        "O cadastro público está desativado. Solicite acesso à equipe responsável.",
+        "warning"
     )
+
+    return redirect("/login")
 
 
 # =========================

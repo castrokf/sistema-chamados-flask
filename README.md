@@ -1,8 +1,10 @@
-# Sistema de Chamados
+# Portal Interno de Atendimento
 
-Sistema web desenvolvido como projeto pessoal de estudo, com o objetivo de simular uma central de atendimento para abertura, acompanhamento e gestão de chamados.
+Aplicação web desenvolvida como projeto pessoal de estudo, simulando um portal interno para abertura, acompanhamento e gestão de solicitações de atendimento.
 
-A ideia do projeto foi construir uma aplicação completa, indo além de telas isoladas. Durante o desenvolvimento, trabalhei com autenticação, controle de permissões, banco de dados, organização de rotas, upload de arquivos, dados fictícios para demonstração, testes automatizados e deploy online.
+O projeto foi pensado para um cenário em que uma organização já possui usuários cadastrados em sua base e precisa oferecer um ambiente controlado para que essas pessoas registrem demandas, acompanhem prazos, consultem respostas e mantenham um histórico de atendimento.
+
+Diferente de um site público aberto, este portal não permite cadastro livre. Os acessos são criados pela equipe administrativa, reforçando a ideia de um sistema interno usado por colaboradores, clientes cadastrados, alunos, setores ou usuários vinculados a uma organização.
 
 ## Demonstração Online
 
@@ -12,7 +14,7 @@ Aplicação publicada no Render:
 https://sistema-chamados-flask.onrender.com
 ```
 
-Contas para teste:
+Contas fictícias para teste:
 
 ```text
 Admin: admin@demo.com
@@ -23,60 +25,75 @@ Senha: Demo@1234
 
 Observação: por estar hospedado em um plano gratuito, o primeiro acesso pode demorar alguns segundos caso o serviço esteja em repouso.
 
-## Sobre o Projeto
+## Ideia do Projeto
 
-Este projeto representa uma central de atendimento simples, onde clientes podem abrir chamados e uma equipe de suporte pode acompanhar, assumir e atualizar esses atendimentos.
+A proposta é representar uma central interna de atendimento, onde solicitações são registradas por usuários previamente cadastrados e tratadas por uma equipe de suporte.
 
-O fluxo principal foi pensado da seguinte forma:
+O fluxo foi pensado assim:
 
-1. Um cliente cria uma conta no sistema.
-2. O cliente abre um chamado informando título, descrição, prioridade e, se necessário, um anexo.
-3. O sistema calcula um prazo de atendimento com base na prioridade.
-4. Usuários da equipe de suporte ou administradores visualizam os chamados no painel administrativo.
-5. A equipe pode assumir atendimentos, responder, alterar status e acompanhar comentários.
-6. Cada chamado mantém um histórico das principais movimentações.
+1. A administração cadastra os usuários internos no portal.
+2. O usuário recebe suas credenciais de acesso.
+3. Após o login, ele pode abrir uma nova solicitação.
+4. A solicitação recebe prioridade e prazo de atendimento.
+5. A equipe de suporte visualiza as solicitações no painel interno.
+6. Um atendente pode assumir, responder e alterar o status do atendimento.
+7. O usuário acompanha tudo pelo próprio painel.
+8. Comentários, anexos e histórico ficam registrados no chamado.
 
-O objetivo foi praticar a construção de um sistema com regras reais de uso, separação entre perfis e uma experiência próxima de uma aplicação administrativa.
+Essa escolha deixa o projeto mais próximo de um ambiente real de atendimento interno, onde controle de acesso, rastreabilidade e histórico individual são partes importantes da regra de negócio.
+
+## Por Que Não Há Cadastro Público?
+
+Em um portal interno, o cadastro livre poderia gerar usuários sem vínculo com a organização. Por isso, o fluxo foi ajustado para que apenas administradores criem novos acessos.
+
+Essa decisão permite:
+
+- identificar quem abriu cada solicitação;
+- evitar cadastros externos não autorizados;
+- manter histórico por usuário;
+- controlar perfis de acesso;
+- separar usuários comuns, suporte e administradores;
+- simular melhor um ambiente corporativo, educacional ou administrativo.
+
+Se alguém tentar acessar `/register`, será redirecionado para login com uma mensagem informando que o cadastro público está desativado.
 
 ## Funcionalidades Implementadas
 
-- Cadastro de usuários.
 - Login com senha protegida por Argon2.
 - Sessão de usuário com Flask.
-- Controle de acesso por perfil: cliente, suporte e administrador.
-- Abertura de chamados por clientes.
+- Cadastro interno de usuários pelo administrador.
+- Controle de acesso por perfil: usuário, suporte e administrador.
+- Abertura de solicitações por usuários cadastrados.
 - Definição de prioridade: baixa, média e alta.
 - Cálculo automático de prazo de atendimento.
-- Upload de anexos em chamados.
-- Painel do cliente para acompanhar seus próprios chamados.
-- Painel administrativo para visualizar e filtrar chamados.
+- Upload de anexos em solicitações.
+- Painel do usuário para acompanhar as próprias solicitações.
+- Painel da equipe para visualizar e filtrar atendimentos.
 - Atribuição de responsável pelo atendimento.
-- Função para o suporte assumir um chamado.
+- Função para suporte assumir uma solicitação.
 - Atualização de status do chamado.
 - Resposta administrativa.
-- Comentários entre cliente e equipe.
+- Comentários entre usuário e equipe.
 - Histórico de movimentações por chamado.
 - Indicadores de chamados abertos, em andamento, resolvidos, sem responsável e atrasados.
-- Tela de gerenciamento de usuários para administradores.
-- Base fictícia de demonstração com clientes, suportes, admin, chamados, comentários e históricos.
+- Tela de gerenciamento de acessos internos.
+- Base fictícia de demonstração.
 - Testes automatizados com Pytest.
 - Deploy online com Render.
 
 ## Perfis de Acesso
 
-O sistema trabalha com três tipos de usuário.
+**Usuário**
 
-**Cliente**
-
-Pode abrir chamados, acompanhar os próprios atendimentos, enviar comentários e visualizar anexos dos seus chamados.
+Representa a pessoa cadastrada na organização. Pode abrir solicitações, acompanhar os próprios atendimentos, comentar e visualizar anexos dos chamados vinculados ao seu acesso.
 
 **Suporte**
 
-Pode acessar o painel de atendimentos, assumir chamados, responder solicitações, alterar status e acompanhar chamados atribuídos à própria conta.
+Representa a equipe responsável pelo atendimento. Pode visualizar chamados, assumir atendimentos, responder solicitações, alterar status e acompanhar os chamados atribuídos à própria conta.
 
 **Administrador**
 
-Tem acesso ao painel administrativo completo, pode gerenciar usuários, alterar tipos de conta e acompanhar todos os chamados.
+Representa a equipe com permissão de gestão. Pode criar acessos internos, alterar perfis de usuários, visualizar todos os chamados e acompanhar a operação do portal.
 
 ## Tecnologias Utilizadas
 
@@ -117,7 +134,7 @@ Principais partes:
 
 ## Base Fictícia de Demonstração
 
-Para facilitar a avaliação do projeto, criei um script de seed:
+Para facilitar a avaliação do projeto, existe um script de seed:
 
 ```bash
 python seed_database.py
@@ -127,20 +144,18 @@ Esse script recria o banco `chamados.db` com:
 
 - 1 usuário administrador.
 - 2 usuários de suporte.
-- 20 clientes fictícios.
+- 20 usuários internos fictícios.
 - 30 chamados fictícios.
 - Comentários de exemplo.
 - Histórico de movimentações.
 
-Essa base ajuda quem está avaliando o projeto a testar o sistema sem precisar cadastrar dados manualmente.
+Essa base permite testar o sistema sem cadastrar dados manualmente.
 
-No deploy, também existe a variável:
+No deploy, a variável abaixo permite criar essa base automaticamente quando o banco estiver vazio:
 
 ```text
 AUTO_SEED_DEMO=true
 ```
-
-Quando essa variável está ativa e o banco está vazio, a aplicação cria automaticamente os dados fictícios.
 
 ## Como Executar Localmente
 
@@ -206,9 +221,7 @@ python main.py
 
 ## Testes Automatizados
 
-O projeto possui testes automatizados para validar os fluxos principais da aplicação.
-
-Execute com:
+Execute os testes com:
 
 ```bash
 python -m pytest
@@ -217,13 +230,14 @@ python -m pytest
 Os testes cobrem:
 
 - Renderização das páginas públicas.
-- Cadastro de cliente.
+- Cadastro público desativado.
 - Login com senha correta.
 - Login com senha incorreta.
 - Redirecionamento de usuário não autenticado.
-- Bloqueio de acesso de cliente ao painel administrativo.
+- Bloqueio de acesso de usuário comum ao painel administrativo.
 - Acesso de admin ao painel.
-- Bloqueio de acesso a chamado de outro cliente.
+- Criação de acesso interno por administrador.
+- Bloqueio de acesso a chamado de outro usuário.
 - Criação de chamado.
 - Adição de comentário.
 - Atualização de status por admin.
@@ -268,7 +282,8 @@ Durante o desenvolvimento deste projeto, pratiquei conceitos importantes para co
 - Controle de sessão de usuário.
 - Autenticação com hash de senha.
 - Restrições de acesso por tipo de usuário.
-- Criação de fluxos diferentes para cliente, suporte e administrador.
+- Criação de fluxo interno de acessos.
+- Separação entre usuários comuns, suporte e administração.
 - Upload e acesso controlado a anexos.
 - Registro de histórico de eventos.
 - Criação de dados fictícios para demonstração.
@@ -283,9 +298,9 @@ Algumas melhorias que podem ser feitas em versões futuras:
 - Migrar o banco de SQLite para PostgreSQL.
 - Substituir retornos por tuplas por estruturas mais legíveis, como dicionários ou modelos.
 - Adicionar paginação na listagem de chamados.
-- Criar recuperação de senha.
-- Adicionar confirmação por email no cadastro.
-- Criar filtros por período de abertura.
+- Criar recuperação de senha para acessos internos.
+- Criar envio de senha temporária por email.
+- Adicionar filtros por período de abertura.
 - Melhorar dashboard com gráficos.
 - Adicionar logs de auditoria mais detalhados.
 - Separar configurações por ambiente.
@@ -297,8 +312,9 @@ Algumas melhorias que podem ser feitas em versões futuras:
 - O arquivo `chamados.db` não é versionado no Git.
 - A pasta `uploads/` também não é versionada.
 - Arquivos locais como ambiente virtual, banco de dados, uploads e caches ficam fora do repositório.
-- Novos cadastros entram inicialmente como cliente.
+- O cadastro público está desativado.
+- Novos acessos devem ser criados pelo painel administrativo.
 
 ## Status
 
-Projeto concluído como versão de demonstração e portfólio, com aplicação online, base fictícia, autenticação, painel administrativo, testes automatizados e instruções de execução.
+Projeto concluído como versão de demonstração e portfólio, com aplicação online, base fictícia, autenticação, painel administrativo, criação interna de acessos, testes automatizados e instruções de execução.

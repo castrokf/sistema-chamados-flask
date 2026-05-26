@@ -7,11 +7,11 @@
     <div>
 
         <h1 class="fw-bold">
-            Usuários
+            Acessos Internos
         </h1>
 
         <p class="text-muted">
-            Gerencie permissões de acesso ao sistema.
+            Cadastre usuários e gerencie permissões do portal interno.
         </p>
 
     </div>
@@ -25,9 +25,119 @@
 
 </div>
 
+<div class="card shadow-sm border-0 mb-4">
+
+    <div class="card-body">
+
+        <h4 class="mb-4">
+            Criar acesso interno
+        </h4>
+
+        <form
+            method="POST"
+            action="/admin/usuarios/criar"
+            class="row g-3"
+        >
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    name="nome"
+                    class="form-control"
+                    placeholder="Nome do usuário"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    name="email"
+                    class="form-control"
+                    placeholder="usuario@empresa.com"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-3">
+
+                <label class="form-label">
+                    Senha temporária
+                </label>
+
+                <input
+                    type="password"
+                    name="senha"
+                    class="form-control"
+                    placeholder="Mínimo de 8 caracteres"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-2">
+
+                <label class="form-label">
+                    Perfil
+                </label>
+
+                <select
+                    name="tipo"
+                    class="form-select"
+                >
+
+                    <option value="cliente">
+                        Usuário
+                    </option>
+
+                    <option value="suporte">
+                        Suporte
+                    </option>
+
+                    <option value="admin">
+                        Admin
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-1 d-flex align-items-end">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary w-100"
+                >
+                    Criar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 <div class="card shadow-sm border-0">
 
     <div class="card-body">
+
+        <h4 class="mb-4">
+            Usuários cadastrados
+        </h4>
 
         <table class="table table-hover align-middle">
 
@@ -37,7 +147,7 @@
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Email</th>
-                    <th>Tipo</th>
+                    <th>Perfil</th>
                     <th>Ação</th>
                 </tr>
 
@@ -78,7 +188,7 @@
                         {% else %}
 
                             <span class="badge bg-secondary">
-                                Cliente
+                                Usuário
                             </span>
 
                         {% endif %}
@@ -108,10 +218,10 @@
                                 >
 
                                     <option
-                                     value="cliente"
-                                    {% if usuario[3] == "cliente" %}selected{% endif %}
+                                        value="cliente"
+                                        {% if usuario[3] == "cliente" %}selected{% endif %}
                                     >
-                                        Cliente
+                                        Usuário
                                     </option>
 
                                     <option

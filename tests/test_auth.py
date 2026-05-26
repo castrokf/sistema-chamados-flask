@@ -1,28 +1,18 @@
 def test_paginas_publicas_renderizam(client):
-    for caminho in ["/", "/login", "/register"]:
+    for caminho in ["/", "/login"]:
         resposta = client.get(caminho)
 
         assert resposta.status_code == 200
 
 
-def test_cadastro_cria_usuario_cliente(client, db_module):
-    resposta = client.post(
-        "/register",
-        data={
-            "nome": "Cliente Novo",
-            "email": "cliente.novo@teste.com",
-            "senha": "Senha@123",
-            "confirmar_senha": "Senha@123",
-        },
-        follow_redirects=False,
-    )
+def test_cadastro_publico_redireciona_para_login(client, db_module):
+    resposta = client.get("/register", follow_redirects=False)
 
     usuario = db_module.buscar_usuario("cliente.novo@teste.com")
 
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == "/login"
-    assert usuario is not None
-    assert usuario[4] == "cliente"
+    assert usuario is None
 
 
 def test_login_com_senha_correta_redireciona_para_dashboard(client, create_user):

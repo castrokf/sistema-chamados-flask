@@ -71,14 +71,14 @@ TITULOS = [
 
 DESCRICOES = [
     "Usuario informa que a acao nao foi concluida e solicita verificacao da equipe.",
-    "Cliente relata comportamento diferente do esperado durante o uso da plataforma.",
+    "Usuario relata comportamento diferente do esperado durante o uso da plataforma.",
     "Solicitacao registrada para avaliacao tecnica e retorno do suporte.",
     "Chamado criado para simular um atendimento real no ambiente de demonstracao.",
 ]
 
 RESPOSTAS = {
     "Em andamento": "Atendimento iniciado. A equipe esta analisando as informacoes enviadas.",
-    "Resolvido": "Solicitacao resolvida pela equipe de suporte. Cliente pode validar o atendimento.",
+    "Resolvido": "Solicitacao resolvida pela equipe de suporte. Usuario pode validar o atendimento.",
     "Encerrado": "Chamado encerrado apos conclusao e registro das informacoes do atendimento.",
 }
 
@@ -262,7 +262,7 @@ def inserir_chamados(cursor, ids):
                     (
                         chamado_id,
                         ids[email_cliente],
-                        "Comentario ficticio do cliente para complementar o atendimento.",
+                        "Comentario ficticio do usuario para complementar o atendimento.",
                         data_formatada(data_abertura + timedelta(minutes=30)),
                     ),
                 )
@@ -301,7 +301,7 @@ def main():
     criar_banco_demo()
 
     print("Banco ficticio criado com sucesso.")
-    print("Usuarios: 1 admin, 2 suportes e 20 clientes.")
+    print("Usuarios: 1 admin, 2 suportes e 20 usuarios internos.")
     print("Senha de todos os usuarios demo: Demo@1234")
     print("Admin: admin@demo.com")
     print("Suporte 1: suporte1@demo.com")
