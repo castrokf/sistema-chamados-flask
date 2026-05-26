@@ -54,6 +54,12 @@ python seed_database.py
 python main.py
 ```
 
+Em Windows, para simular um servidor WSGI local:
+
+```bash
+waitress-serve --listen=127.0.0.1:5000 main:app
+```
+
 6. Acesse no navegador:
 
 ```text
@@ -103,6 +109,8 @@ Comando de start:
 ```bash
 gunicorn main:app
 ```
+
+Observacao: `gunicorn` e indicado para deploy em Linux, como Render e Railway. Em Windows, use `python main.py` para desenvolvimento ou `waitress-serve --listen=127.0.0.1:5000 main:app` para testar com servidor WSGI local.
 
 Variaveis de ambiente recomendadas:
 
