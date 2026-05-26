@@ -13,6 +13,7 @@ from database import (
     criar_tabela_chamados,
     criar_tabela_comentarios,
     criar_tabela_historico,
+    criar_tabela_recuperacao_senha,
     criar_tabela_usuarios,
 )
 
@@ -95,6 +96,7 @@ def preparar_banco():
     )
 
     criar_tabela_usuarios()
+    criar_tabela_recuperacao_senha()
     criar_tabela_chamados()
     criar_tabela_historico()
     criar_tabela_comentarios()

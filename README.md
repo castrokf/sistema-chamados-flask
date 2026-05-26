@@ -83,6 +83,9 @@ Se alguém tentar acessar `/register`, será redirecionado para login com uma me
 - Histórico de movimentações por chamado.
 - Indicadores de chamados abertos, em andamento, resolvidos, sem responsável e atrasados.
 - Tela de gerenciamento de acessos internos.
+- Recuperação de senha por token temporário.
+- Acesso a dados por campos nomeados, como `chamado.status` e `usuario.email`.
+- Armazenamento de anexos com suporte a Cloudinary para deploy gratuito.
 - Base fictícia de demonstração.
 - Testes automatizados com Pytest.
 - Deploy online com Render.
@@ -111,6 +114,7 @@ Representa a equipe com permissão de gestão. Pode criar acessos internos, alte
 - Pytest
 - Gunicorn
 - Waitress
+- Cloudinary
 - Render
 
 ## Estrutura do Projeto
@@ -123,6 +127,7 @@ sistema_chamados/
     requirements.txt
     Procfile
     routes/
+    services/
     static/
     templates/
     tests/
@@ -132,6 +137,7 @@ Principais partes:
 
 - `main.py`: inicialização da aplicação Flask, registro das rotas e criação das tabelas.
 - `database.py`: funções de conexão, criação de tabelas e operações no SQLite.
+- `services/storage.py`: camada de armazenamento de anexos, com suporte local e Cloudinary.
 - `routes/`: organização das rotas de autenticação, chamados e administração.
 - `templates/`: páginas HTML renderizadas pelo Flask.
 - `static/`: arquivos estáticos, como CSS e logo.
@@ -239,6 +245,7 @@ Os testes cobrem:
 - Cadastro público desativado.
 - Login com senha correta.
 - Login com senha incorreta.
+- Recuperação e redefinição de senha.
 - Redirecionamento de usuário não autenticado.
 - Bloqueio de acesso de usuário comum ao painel administrativo.
 - Acesso de admin ao painel.
@@ -250,6 +257,36 @@ Os testes cobrem:
 - Suporte assumindo chamado.
 
 Os testes usam um banco SQLite temporário e não alteram o banco fictício `chamados.db`.
+
+## Recuperação de Senha
+
+O portal possui um fluxo de recuperação de senha por token temporário.
+
+No ambiente de demonstração, o link de redefinição pode ser exibido na própria tela de recuperação para facilitar testes:
+
+```text
+SHOW_RESET_LINK=true
+```
+
+Em um ambiente real, esse token deveria ser enviado por email usando um serviço SMTP ou provedor transacional. A estrutura do fluxo já está preparada para isso: o token expira, só pode ser usado uma vez e redefine a senha com hash Argon2.
+
+## Uploads em Deploy Gratuito
+
+Hospedagens gratuitas como Render podem usar armazenamento temporário. Isso significa que arquivos salvos diretamente no disco do servidor podem ser perdidos quando o serviço reinicia.
+
+Para evitar esse problema, o projeto agora possui uma camada de armazenamento de anexos:
+
+- localmente, salva arquivos na pasta `uploads/`;
+- em produção, se `CLOUDINARY_URL` estiver configurado, envia os anexos para Cloudinary.
+
+Variáveis opcionais para anexos em nuvem:
+
+```text
+CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
+CLOUDINARY_FOLDER=portal-interno-atendimento
+```
+
+Sem `CLOUDINARY_URL`, o sistema continua usando armazenamento local.
 
 ## Deploy
 
@@ -265,12 +302,22 @@ Start Command:
 gunicorn main:app
 ```
 
-Variáveis de ambiente:
+Variáveis de ambiente principais:
 
 ```text
 FLASK_SECRET_KEY=defina-uma-chave-secreta
 AUTO_SEED_DEMO=true
+SHOW_RESET_LINK=true
 ```
+
+Variáveis opcionais para anexos no Cloudinary:
+
+```text
+CLOUDINARY_URL=use-apenas-a-url-real-gerada-pelo-cloudinary
+CLOUDINARY_FOLDER=portal-interno-atendimento
+```
+
+Se você ainda não configurou o Cloudinary, deixe `CLOUDINARY_URL` sem cadastrar no Render. Não use o texto de exemplo como valor real.
 
 O arquivo `Procfile` também informa o comando de inicialização:
 
@@ -285,12 +332,15 @@ Durante o desenvolvimento deste projeto, pratiquei conceitos importantes para co
 - Organização de uma aplicação Flask em módulos.
 - Uso de Blueprints para separar responsabilidades.
 - Criação e consulta de tabelas com SQLite.
+- Uso de linhas nomeadas no acesso ao banco, reduzindo dependência de índices numéricos.
 - Controle de sessão de usuário.
 - Autenticação com hash de senha.
 - Restrições de acesso por tipo de usuário.
 - Criação de fluxo interno de acessos.
 - Separação entre usuários comuns, suporte e administração.
 - Upload e acesso controlado a anexos.
+- Persistência de anexos em armazenamento externo para ambiente gratuito.
+- Recuperação de senha com token temporário.
 - Registro de histórico de eventos.
 - Criação de dados fictícios para demonstração.
 - Testes automatizados com Pytest.
@@ -302,10 +352,8 @@ Durante o desenvolvimento deste projeto, pratiquei conceitos importantes para co
 Algumas melhorias que podem ser feitas em versões futuras:
 
 - Migrar o banco de SQLite para PostgreSQL.
-- Substituir retornos por tuplas por estruturas mais legíveis, como dicionários ou modelos.
 - Adicionar paginação na listagem de chamados.
-- Criar recuperação de senha para acessos internos.
-- Criar envio de senha temporária por email.
+- Enviar links de recuperação por email usando provedor SMTP.
 - Adicionar filtros por período de abertura.
 - Melhorar dashboard com gráficos.
 - Adicionar logs de auditoria mais detalhados.

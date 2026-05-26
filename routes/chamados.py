@@ -6,7 +6,8 @@ from flask import (
     request,
     redirect,
     session,
-    flash
+    flash,
+    send_from_directory
 )
 
 from database import (
@@ -35,8 +36,10 @@ from database import (
 )
 
 from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename
-from flask import send_from_directory
+from services.storage import (
+    arquivo_remoto,
+    salvar_arquivo_chamado
+)
 from utils.decorators import login_required
 
 chamados = Blueprint(
@@ -212,23 +215,15 @@ def novo_chamado():
 
             if extensao_permitida(arquivo.filename):
 
-                nome_seguro = secure_filename(
-                    arquivo.filename
+                anexo_salvo = salvar_arquivo_chamado(
+                    arquivo,
+                    id_chamado
                 )
-
-                nome_final = f"{id_chamado}_{nome_seguro}"
-
-                caminho = os.path.join(
-                    "uploads",
-                    nome_final
-                )
-
-                arquivo.save(caminho)
 
                 salvar_anexo(
                     id_chamado,
-                    nome_seguro,
-                    caminho,
+                    anexo_salvo["nome_arquivo"],
+                    anexo_salvo["caminho_arquivo"],
                     data_criacao
                 )
 
@@ -319,7 +314,7 @@ def visualizar_chamado(id_chamado):
 
     usuario_logado = session["usuario_id"]
     tipo_usuario = session["usuario_tipo"]
-    dono_chamado = chamado[5]
+    dono_chamado = chamado["usuario_id"]
 
     if tipo_usuario not in ["admin", "suporte"] and usuario_logado != dono_chamado:
 
@@ -348,7 +343,7 @@ def visualizar_chamado(id_chamado):
 
         if acao == "comentario":
 
-            if chamado[3] == "Encerrado":
+            if chamado["status"] == "Encerrado":
 
                 flash(
                     "Não é possível comentar em um chamado encerrado.",
@@ -390,11 +385,11 @@ def visualizar_chamado(id_chamado):
                 data_comentario
             )
 
-            if tipo_usuario not in ["admin", "suporte"] and chamado[3] == "Resolvido":
+            if tipo_usuario not in ["admin", "suporte"] and chamado["status"] == "Resolvido":
 
                 atualizar_chamado(
                     id_chamado,
-                    chamado[6],
+                    chamado["resposta"],
                     "Em andamento"
                 )
 
@@ -458,12 +453,12 @@ def visualizar_chamado(id_chamado):
                 "%d/%m/%Y %H:%M"
             )
 
-            if chamado[3] != status:
+            if chamado["status"] != status:
 
                 registrar_historico(
                     id_chamado,
                     usuario_logado,
-                    f"Status alterado de {chamado[3]} para {status}",
+                    f"Status alterado de {chamado['status']} para {status}",
                     data_atualizacao
                 )
 
@@ -512,7 +507,7 @@ def visualizar_anexo(id_anexo):
 
         return redirect("/dashboard")
 
-    chamado_id = anexo[1]
+    chamado_id = anexo["chamado_id"]
 
     chamado = buscar_chamado(chamado_id)
 
@@ -527,7 +522,7 @@ def visualizar_anexo(id_anexo):
 
     if (
         session.get("usuario_tipo") not in ["admin", "suporte"]
-        and session.get("usuario_id") != chamado[5]
+        and session.get("usuario_id") != chamado["usuario_id"]
     ):
 
         flash(
@@ -537,11 +532,13 @@ def visualizar_anexo(id_anexo):
 
         return redirect("/dashboard")
 
-    caminho_arquivo = anexo[3]
+    caminho_arquivo = anexo["caminho_arquivo"]
 
-    nome_arquivo = os.path.basename(
-        caminho_arquivo
-    )
+    if arquivo_remoto(caminho_arquivo):
+
+        return redirect(caminho_arquivo)
+
+    nome_arquivo = os.path.basename(caminho_arquivo)
 
     return send_from_directory(
         "uploads",

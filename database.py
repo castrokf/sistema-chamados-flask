@@ -15,7 +15,25 @@ def conectar():
         timeout=10
     )
 
+    conexao.row_factory = sqlite3.Row
+
     return conexao
+
+
+def linha_para_dict(linha):
+
+    if linha is None:
+        return None
+
+    return dict(linha)
+
+
+def linhas_para_dict(linhas):
+
+    return [
+        dict(linha)
+        for linha in linhas
+    ]
 
 
 # =========================
@@ -48,6 +66,35 @@ def criar_tabela_usuarios():
 
 
 # =========================
+# TABELA RECUPERAÇÃO DE SENHA
+# =========================
+def criar_tabela_recuperacao_senha():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS recuperacao_senha (
+
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        usuario_id INTEGER NOT NULL,
+
+        token TEXT NOT NULL UNIQUE,
+
+        expira_em TEXT NOT NULL,
+
+        usado INTEGER NOT NULL DEFAULT 0,
+
+        data_criacao TEXT NOT NULL
+    )
+    """)
+
+    conexao.commit()
+    conexao.close()
+
+
+# =========================
 # CRIAR USUÁRIO
 # =========================
 def criar_usuario(nome, email, senha, tipo):
@@ -63,6 +110,94 @@ def criar_usuario(nome, email, senha, tipo):
 
     conexao.commit()
 
+    conexao.close()
+
+
+def atualizar_senha_usuario(usuario_id, senha_hash):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    UPDATE usuarios
+    SET senha = ?
+    WHERE id = ?
+    """, (
+        senha_hash,
+        usuario_id
+    ))
+
+    conexao.commit()
+    conexao.close()
+
+
+def criar_token_recuperacao(
+    usuario_id,
+    token,
+    expira_em,
+    data_criacao
+):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    INSERT INTO recuperacao_senha (
+        usuario_id,
+        token,
+        expira_em,
+        data_criacao
+    )
+    VALUES (?, ?, ?, ?)
+    """, (
+        usuario_id,
+        token,
+        expira_em,
+        data_criacao
+    ))
+
+    conexao.commit()
+    conexao.close()
+
+
+def buscar_token_recuperacao(token):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT
+        recuperacao_senha.id AS id,
+        recuperacao_senha.usuario_id AS usuario_id,
+        recuperacao_senha.token AS token,
+        recuperacao_senha.expira_em AS expira_em,
+        recuperacao_senha.usado AS usado,
+        usuarios.email AS usuario_email
+    FROM recuperacao_senha
+    INNER JOIN usuarios
+        ON recuperacao_senha.usuario_id = usuarios.id
+    WHERE recuperacao_senha.token = ?
+    """, (token,))
+
+    recuperacao = cursor.fetchone()
+
+    conexao.close()
+
+    return linha_para_dict(recuperacao)
+
+
+def marcar_token_recuperacao_usado(token):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    UPDATE recuperacao_senha
+    SET usado = 1
+    WHERE token = ?
+    """, (token,))
+
+    conexao.commit()
     conexao.close()
 
 
@@ -84,7 +219,7 @@ def buscar_usuario(email):
 
     conexao.close()
 
-    return usuario
+    return linha_para_dict(usuario)
 
 
 # =========================
@@ -187,7 +322,7 @@ def listar_chamados_usuario(usuario_id):
 
     conexao.close()
 
-    return chamados
+    return linhas_para_dict(chamados)
 
 # =========================
 # BUSCAR CHAMADO
@@ -207,7 +342,7 @@ def buscar_chamado(id_chamado):
 
     conexao.close()
 
-    return chamado
+    return linha_para_dict(chamado)
 
 # =========================
 # ATUALIZAR CHAMADO
@@ -313,7 +448,7 @@ def buscar_chamados_usuario(
 
     conexao.close()
 
-    return chamados
+    return linhas_para_dict(chamados)
 
 # =========================
 # TABELA HISTÓRICO
@@ -389,11 +524,11 @@ def listar_historico(
 
     cursor.execute("""
     SELECT
-        historico_chamados.id,
-        historico_chamados.mensagem,
-        historico_chamados.data,
-        usuarios.nome,
-        usuarios.tipo
+        historico_chamados.id AS id,
+        historico_chamados.mensagem AS mensagem,
+        historico_chamados.data AS data,
+        usuarios.nome AS usuario_nome,
+        usuarios.tipo AS usuario_tipo
     FROM historico_chamados
     LEFT JOIN usuarios
         ON historico_chamados.usuario_id = usuarios.id
@@ -405,7 +540,7 @@ def listar_historico(
 
     conexao.close()
 
-    return historico
+    return linhas_para_dict(historico)
 
 # =========================
 # TABELA COMENTÁRIOS
@@ -482,11 +617,11 @@ def listar_comentarios(chamado_id):
 
     cursor.execute("""
     SELECT
-        comentarios_chamados.id,
-        usuarios.nome,
-        usuarios.tipo,
-        comentarios_chamados.mensagem,
-        comentarios_chamados.data
+        comentarios_chamados.id AS id,
+        usuarios.nome AS usuario_nome,
+        usuarios.tipo AS usuario_tipo,
+        comentarios_chamados.mensagem AS mensagem,
+        comentarios_chamados.data AS data
     FROM comentarios_chamados
     INNER JOIN usuarios
         ON comentarios_chamados.usuario_id = usuarios.id
@@ -498,7 +633,7 @@ def listar_comentarios(chamado_id):
 
     conexao.close()
 
-    return comentarios
+    return linhas_para_dict(comentarios)
 
 # =========================
 # ESTATÍSTICAS ADMIN
@@ -563,7 +698,7 @@ def listar_chamados_recentes_usuario(usuario_id):
 
     conexao.close()
 
-    return chamados
+    return linhas_para_dict(chamados)
 
 # =========================
 # LISTAR CHAMADOS ADMIN
@@ -575,12 +710,12 @@ def listar_chamados_recentes_admin():
 
     cursor.execute("""
     SELECT
-        chamados.id,
-        chamados.titulo,
-        chamados.status,
-        chamados.prioridade,
-        usuarios.nome,
-        chamados.data_criacao
+        chamados.id AS id,
+        chamados.titulo AS titulo,
+        chamados.status AS status,
+        chamados.prioridade AS prioridade,
+        usuarios.nome AS usuario_nome,
+        chamados.data_criacao AS data_criacao
     FROM chamados
     INNER JOIN usuarios
         ON chamados.usuario_id = usuarios.id
@@ -592,7 +727,7 @@ def listar_chamados_recentes_admin():
 
     conexao.close()
 
-    return chamados
+    return linhas_para_dict(chamados)
 
 # =========================
 # LISTAR CHAMADOS ADMIN
@@ -608,13 +743,13 @@ def listar_chamados_admin(
 
     query = """
     SELECT
-        chamados.id,
-        chamados.titulo,
-        chamados.status,
-        chamados.prioridade,
-        usuarios.nome,
-        chamados.data_criacao,
-        chamados.data_limite,
+        chamados.id AS id,
+        chamados.titulo AS titulo,
+        chamados.status AS status,
+        chamados.prioridade AS prioridade,
+        usuarios.nome AS usuario_nome,
+        chamados.data_criacao AS data_criacao,
+        chamados.data_limite AS data_limite,
         CASE
             WHEN chamados.data_limite IS NOT NULL
             AND datetime(chamados.data_limite) < datetime('now', 'localtime')
@@ -622,7 +757,7 @@ def listar_chamados_admin(
             THEN 1
             ELSE 0
         END AS atrasado,
-        responsavel.nome
+        responsavel.nome AS responsavel_nome
     FROM chamados
     INNER JOIN usuarios
         ON chamados.usuario_id = usuarios.id
@@ -659,7 +794,7 @@ def listar_chamados_admin(
 
     conexao.close()
 
-    return chamados
+    return linhas_para_dict(chamados)
 
 
 # =========================
@@ -771,7 +906,7 @@ def listar_anexos(chamado_id):
 
     conexao.close()
 
-    return anexos
+    return linhas_para_dict(anexos)
 # =========================
 # BUSCAR ANEXO
 # =========================
@@ -791,7 +926,7 @@ def buscar_anexo(id_anexo):
 
     conexao.close()
 
-    return anexo
+    return linha_para_dict(anexo)
 
 # =========================
 # MIGRAÇÃO - USUÁRIO NO HISTÓRICO
@@ -845,7 +980,7 @@ def listar_usuarios():
 
     conexao.close()
 
-    return usuarios
+    return linhas_para_dict(usuarios)
 
 
 # =========================
@@ -926,7 +1061,7 @@ def listar_administradores():
 
     conexao.close()
 
-    return administradores
+    return linhas_para_dict(administradores)
 
 
 # =========================
@@ -967,13 +1102,13 @@ def listar_chamados_responsavel(
 
     query = """
     SELECT
-        chamados.id,
-        chamados.titulo,
-        chamados.status,
-        chamados.prioridade,
-        usuarios.nome,
-        chamados.data_criacao,
-        chamados.data_limite,
+        chamados.id AS id,
+        chamados.titulo AS titulo,
+        chamados.status AS status,
+        chamados.prioridade AS prioridade,
+        usuarios.nome AS usuario_nome,
+        chamados.data_criacao AS data_criacao,
+        chamados.data_limite AS data_limite,
         CASE
             WHEN chamados.data_limite IS NOT NULL
             AND datetime(chamados.data_limite) < datetime('now', 'localtime')
@@ -981,7 +1116,7 @@ def listar_chamados_responsavel(
             THEN 1
             ELSE 0
         END AS atrasado,
-        responsavel.nome
+        responsavel.nome AS responsavel_nome
     FROM chamados
     INNER JOIN usuarios
         ON chamados.usuario_id = usuarios.id
@@ -1010,7 +1145,7 @@ def listar_chamados_responsavel(
 
     conexao.close()
 
-    return chamados
+    return linhas_para_dict(chamados)
 
 # =========================
 # BUSCAR RESPONSÁVEL DO CHAMADO
@@ -1034,7 +1169,7 @@ def buscar_responsavel_chamado(chamado_id):
     conexao.close()
 
     if responsavel:
-        return responsavel[0]
+        return responsavel["nome"]
 
     return None
 
@@ -1124,4 +1259,4 @@ def listar_atendentes():
 
     conexao.close()
 
-    return atendentes
+    return linhas_para_dict(atendentes)

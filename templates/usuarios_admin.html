@@ -160,26 +160,26 @@
                 <tr>
 
                     <td data-label="ID">
-                        #{{ usuario[0] }}
+                        #{{ usuario.id }}
                     </td>
 
                     <td data-label="Nome">
-                        {{ usuario[1] }}
+                        {{ usuario.nome }}
                     </td>
 
                     <td data-label="Email">
-                        {{ usuario[2] }}
+                        {{ usuario.email }}
                     </td>
 
                     <td data-label="Perfil">
 
-                        {% if usuario[3] == "admin" %}
+                        {% if usuario.tipo == "admin" %}
 
                             <span class="badge bg-warning text-dark">
                                 Admin
                             </span>
 
-                        {% elif usuario[3] == "suporte" %}
+                        {% elif usuario.tipo == "suporte" %}
 
                             <span class="badge bg-info text-dark">
                                 Suporte
@@ -197,7 +197,7 @@
 
                     <td data-label="Ação">
 
-                        {% if usuario[0] == session["usuario_id"] %}
+                        {% if usuario.id == session["usuario_id"] %}
 
                             <span class="text-muted">
                                 Conta atual
@@ -207,7 +207,7 @@
 
                             <form
                                 method="POST"
-                                action="/admin/usuarios/{{ usuario[0] }}/tipo"
+                                action="/admin/usuarios/{{ usuario.id }}/tipo"
                                 class="d-flex gap-2"
                             >
 
@@ -219,21 +219,21 @@
 
                                     <option
                                         value="cliente"
-                                        {% if usuario[3] == "cliente" %}selected{% endif %}
+                                        {% if usuario.tipo == "cliente" %}selected{% endif %}
                                     >
                                         Usuário
                                     </option>
 
                                     <option
                                         value="suporte"
-                                        {% if usuario[3] == "suporte" %}selected{% endif %}
+                                        {% if usuario.tipo == "suporte" %}selected{% endif %}
                                     >
                                         Suporte
                                     </option>
 
                                     <option
                                         value="admin"
-                                        {% if usuario[3] == "admin" %}selected{% endif %}
+                                        {% if usuario.tipo == "admin" %}selected{% endif %}
                                     >
                                         Admin
                                     </option>

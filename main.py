@@ -11,6 +11,7 @@ from flask import (
 
 from database import (
     criar_tabela_usuarios,
+    criar_tabela_recuperacao_senha,
     criar_tabela_chamados,
     criar_tabela_historico,
     criar_tabela_comentarios,
@@ -69,6 +70,7 @@ app.register_blueprint(admin)
 
 # Criar tabelas
 criar_tabela_usuarios()
+criar_tabela_recuperacao_senha()
 criar_tabela_chamados()
 criar_tabela_historico()
 criar_tabela_comentarios()

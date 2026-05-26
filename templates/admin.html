@@ -165,10 +165,10 @@
                         {% for admin in administradores %}
 
                             <option
-                                value="{{ admin[0] }}"
-                                {% if responsavel_id == admin[0]|string %}selected{% endif %}
+                                value="{{ admin.id }}"
+                                {% if responsavel_id == admin.id|string %}selected{% endif %}
                             >
-                                {{ admin[1] }}
+                                {{ admin.nome }}
                             </option>
 
                         {% endfor %}
@@ -248,35 +248,35 @@
 
                     <td data-label="ID">
                         <span class="badge text-bg-light border">
-                            CH-{{ "%04d"|format(chamado[0]) }}
+                            CH-{{ "%04d"|format(chamado.id) }}
                         </span>
                     </td>
 
                     <td data-label="Título">
-                        {{ chamado[1] }}
+                        {{ chamado.titulo }}
                     </td>
 
                     <td data-label="Status">
 
-                        {% if chamado[2] == "Aberto" %}
+                        {% if chamado.status == "Aberto" %}
 
                             <span class="badge bg-danger">
                                 Aberto
                             </span>
 
-                        {% elif chamado[2] == "Em andamento" %}
+                        {% elif chamado.status == "Em andamento" %}
 
                             <span class="badge bg-warning text-dark">
                                 Em andamento
                             </span>
 
-                        {% elif chamado[2] == "Resolvido" %}
+                        {% elif chamado.status == "Resolvido" %}
 
                             <span class="badge bg-success">
                                 Resolvido
                             </span>
 
-                        {% elif chamado[2] == "Encerrado" %}
+                        {% elif chamado.status == "Encerrado" %}
 
                             <span class="badge bg-secondary">
                                 Encerrado
@@ -285,7 +285,7 @@
                         {% else %}
 
                             <span class="badge bg-secondary">
-                                {{ chamado[2] }}
+                                {{ chamado.status }}
                             </span>
 
                         {% endif %}
@@ -294,13 +294,13 @@
 
                     <td data-label="Prioridade">
 
-                        {% if chamado[3] == "Alta" %}
+                        {% if chamado.prioridade == "Alta" %}
 
                             <span class="badge bg-danger">
                                 Alta
                             </span>
 
-                        {% elif chamado[3] == "Média" %}
+                        {% elif chamado.prioridade == "Média" %}
 
                             <span class="badge bg-warning text-dark">
                                 Média
@@ -317,22 +317,22 @@
                     </td>
 
                     <td data-label="Usuário">
-                        {{ chamado[4] }}
+                        {{ chamado.usuario_nome }}
                     </td>
 
                     <td data-label="Data">
-                        {{ chamado[5] }}
+                        {{ chamado.data_criacao }}
                     </td>
 
                     <td data-label="Prazo">
 
-                        {% if chamado[7] == 1 %}
+                        {% if chamado.atrasado == 1 %}
 
                             <span class="badge bg-danger">
                                 Atrasado
                             </span>
 
-                        {% elif chamado[6] %}
+                        {% elif chamado.data_limite %}
 
                             <span class="badge bg-success">
                                 No prazo
@@ -352,7 +352,7 @@
 
                         <form
                             method="POST"
-                            action="/admin/chamado/{{ chamado[0] }}/responsavel"
+                            action="/admin/chamado/{{ chamado.id }}/responsavel"
                             class="d-flex gap-2"
                         >
 
@@ -368,10 +368,10 @@
                                 {% for admin in administradores %}
 
                                     <option
-                                        value="{{ admin[0] }}"
-                                        {% if chamado[8] == admin[1] %}selected{% endif %}
+                                        value="{{ admin.id }}"
+                                        {% if chamado.responsavel_nome == admin.nome %}selected{% endif %}
                                     >
-                                        {{ admin[1] }}
+                                        {{ admin.nome }}
                                     </option>
 
                                 {% endfor %}
@@ -392,7 +392,7 @@
                     <td data-label="Ação">
 
                         <a
-                            href="/chamado/{{ chamado[0] }}"
+                            href="/chamado/{{ chamado.id }}"
                             class="btn btn-sm btn-primary"
                         >
                             Ver detalhes

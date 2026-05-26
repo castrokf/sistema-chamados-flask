@@ -15,14 +15,14 @@ def test_cliente_cria_chamado(client, login, db_module):
         follow_redirects=False,
     )
 
-    chamados = db_module.listar_chamados_usuario(usuario[0])
-    historico = db_module.listar_historico(chamados[0][0])
+    chamados = db_module.listar_chamados_usuario(usuario["id"])
+    historico = db_module.listar_historico(chamados[0]["id"])
 
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == "/meus_chamados"
     assert len(chamados) == 1
-    assert chamados[0][1] == "Erro de acesso"
-    assert chamados[0][3] == "Aberto"
+    assert chamados[0]["titulo"] == "Erro de acesso"
+    assert chamados[0]["status"] == "Aberto"
     assert len(historico) == 1
 
 
@@ -37,7 +37,7 @@ def test_cliente_adiciona_comentario(client, login, db_module):
         "Chamado com comentário",
         "Descrição do chamado.",
         "Baixa",
-        usuario[0],
+        usuario["id"],
         "01/01/2026 10:00",
         "2026-01-04 10:00:00",
     )
@@ -56,7 +56,7 @@ def test_cliente_adiciona_comentario(client, login, db_module):
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == f"/chamado/{chamado_id}"
     assert len(comentarios) == 1
-    assert comentarios[0][3] == "Comentário de acompanhamento."
+    assert comentarios[0]["mensagem"] == "Comentário de acompanhamento."
 
 
 def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module):
@@ -70,7 +70,7 @@ def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module)
         "Chamado para atualizar",
         "Descrição do chamado.",
         "Média",
-        cliente[0],
+        cliente["id"],
         "01/01/2026 10:00",
         "2026-01-02 10:00:00",
     )
@@ -96,8 +96,8 @@ def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module)
 
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == f"/chamado/{chamado_id}"
-    assert chamado[3] == "Resolvido"
-    assert chamado[6] == "Chamado resolvido pela equipe."
+    assert chamado["status"] == "Resolvido"
+    assert chamado["resposta"] == "Chamado resolvido pela equipe."
     assert len(historico) == 1
 
 
@@ -112,7 +112,7 @@ def test_suporte_assume_chamado_aberto(client, login, create_user, db_module):
         "Chamado aberto",
         "Descrição do chamado.",
         "Alta",
-        cliente[0],
+        cliente["id"],
         "01/01/2026 10:00",
         "2026-01-01 14:00:00",
     )
@@ -133,6 +133,6 @@ def test_suporte_assume_chamado_aberto(client, login, create_user, db_module):
 
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == f"/chamado/{chamado_id}"
-    assert chamado[3] == "Em andamento"
-    assert chamado[9] == suporte[0]
+    assert chamado["status"] == "Em andamento"
+    assert chamado["responsavel_id"] == suporte["id"]
     assert responsavel == "Suporte Teste"

@@ -290,11 +290,11 @@ def assumir_chamado(chamado_id):
         data_atualizacao
     )
 
-    if chamado[3] == "Aberto":
+    if chamado["status"] == "Aberto":
 
         atualizar_chamado(
             chamado_id,
-            chamado[6],
+            chamado["resposta"],
             "Em andamento"
         )
 

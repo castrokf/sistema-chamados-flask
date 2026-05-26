@@ -54,7 +54,7 @@ def test_admin_cria_acesso_interno(client, login, db_module):
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == "/admin/usuarios"
     assert usuario is not None
-    assert usuario[4] == "cliente"
+    assert usuario["tipo"] == "cliente"
 
 
 def test_cliente_nao_acessa_chamado_de_outro_usuario(client, login, create_user, db_module):
@@ -68,7 +68,7 @@ def test_cliente_nao_acessa_chamado_de_outro_usuario(client, login, create_user,
         "Chamado restrito",
         "Chamado criado para testar permissão.",
         "Alta",
-        dono[0],
+        dono["id"],
         "01/01/2026 10:00",
         "2026-01-01 14:00:00",
     )

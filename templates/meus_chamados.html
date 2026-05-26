@@ -106,30 +106,30 @@
                     </td>
 
                     <td data-label="Título">
-                        {{ chamado[1] }}
+                        {{ chamado.titulo }}
                     </td>
 
                     <td data-label="Status">
 
-                        {% if chamado[3] == "Aberto" %}
+                        {% if chamado.status == "Aberto" %}
 
                             <span class="badge bg-danger">
                                 Aberto
                             </span>
 
-                        {% elif chamado[3] == "Em andamento" %}
+                        {% elif chamado.status == "Em andamento" %}
 
                             <span class="badge bg-warning text-dark">
                                 Em andamento
                             </span>
 
-                        {% elif chamado[3] == "Resolvido" %}
+                        {% elif chamado.status == "Resolvido" %}
 
                             <span class="badge bg-success">
                                 Resolvido
                             </span>
 
-                        {% elif chamado[3] == "Encerrado" %}
+                        {% elif chamado.status == "Encerrado" %}
 
                             <span class="badge bg-secondary">
                                 Encerrado
@@ -138,7 +138,7 @@
                         {% else %}
 
                             <span class="badge bg-secondary">
-                                {{ chamado[3] }}
+                                {{ chamado.status }}
                             </span>
 
                         {% endif %}
@@ -147,13 +147,13 @@
 
                     <td data-label="Prioridade">
 
-                        {% if chamado[4] == "Alta" %}
+                        {% if chamado.prioridade == "Alta" %}
 
                             <span class="badge bg-danger">
                                 Alta
                             </span>
 
-                        {% elif chamado[4] == "Média" %}
+                        {% elif chamado.prioridade == "Média" %}
 
                             <span class="badge bg-warning text-dark">
                                 Média
@@ -170,13 +170,13 @@
                     </td>
 
                     <td data-label="Data">
-                        {{ chamado[7] }}
+                        {{ chamado.data_criacao }}
                     </td>
 
                     <td data-label="Ação">
 
                         <a
-                            href="/chamado/{{ chamado[0] }}"
+                            href="/chamado/{{ chamado.id }}"
                             class="btn btn-sm btn-primary"
                         >
                             Abrir

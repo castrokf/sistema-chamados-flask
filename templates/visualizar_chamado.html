@@ -7,7 +7,7 @@
     <div>
 
         <h1 class="fw-bold">
-            Chamado CH-{{ "%04d"|format(chamado[0]) }}
+            Chamado CH-{{ "%04d"|format(chamado.id) }}
         </h1>
 
         <p class="text-muted">
@@ -48,11 +48,11 @@
             <div class="col-md-8">
 
                 <h3 class="fw-bold mb-3">
-                    {{ chamado[1] }}
+                    {{ chamado.titulo }}
                 </h3>
 
                 <p class="text-muted">
-                    {{ chamado[2] }}
+                    {{ chamado.descricao }}
                 </p>
 
             </div>
@@ -65,25 +65,25 @@
 
                     <br>
 
-                    {% if chamado[3] == "Aberto" %}
+                    {% if chamado.status == "Aberto" %}
 
                         <span class="badge bg-danger">
                             Aberto
                         </span>
 
-                    {% elif chamado[3] == "Em andamento" %}
+                    {% elif chamado.status == "Em andamento" %}
 
                         <span class="badge bg-warning text-dark">
                             Em andamento
                         </span>
 
-                    {% elif chamado[3] == "Resolvido" %}
+                    {% elif chamado.status == "Resolvido" %}
 
                         <span class="badge bg-success">
                             Resolvido
                         </span>
 
-                    {% elif chamado[3] == "Encerrado" %}
+                    {% elif chamado.status == "Encerrado" %}
 
                         <span class="badge bg-secondary">
                             Encerrado
@@ -92,7 +92,7 @@
                     {% else %}
 
                         <span class="badge bg-secondary">
-                            {{ chamado[3] }}
+                            {{ chamado.status }}
                         </span>
 
                     {% endif %}
@@ -105,13 +105,13 @@
 
                     <br>
 
-                    {% if chamado[4] == "Alta" %}
+                    {% if chamado.prioridade == "Alta" %}
 
                         <span class="badge bg-danger">
                             Alta
                         </span>
 
-                    {% elif chamado[4] == "Média" %}
+                    {% elif chamado.prioridade == "Média" %}
 
                         <span class="badge bg-warning text-dark">
                             Média
@@ -133,7 +133,7 @@
 
                     <br>
 
-                    {{ chamado[7] }}
+                    {{ chamado.data_criacao }}
 
                 </div>
 
@@ -143,9 +143,9 @@
 
                     <br>
 
-                    {% if chamado[8] %}
+                    {% if chamado.data_limite %}
 
-                        {{ chamado[8] }}
+                        {{ chamado.data_limite }}
 
                     {% else %}
 
@@ -181,7 +181,7 @@
 
                         <form
                             method="POST"
-                            action="/admin/chamado/{{ chamado[0] }}/assumir"
+                            action="/admin/chamado/{{ chamado.id }}/assumir"
                             class="mt-2"
                         >
 
@@ -215,10 +215,10 @@
             Resposta do suporte
         </h4>
 
-        {% if chamado[6] %}
+        {% if chamado.resposta %}
 
             <div class="alert alert-light border">
-                {{ chamado[6] }}
+                {{ chamado.resposta }}
             </div>
 
         {% else %}
@@ -249,19 +249,19 @@
                 <div>
 
                     <strong>
-                        {{ anexo[2] }}
+                        {{ anexo.nome_arquivo }}
                     </strong>
 
                     <br>
 
                     <small class="text-muted">
-                        Enviado em {{ anexo[4] }}
+                        Enviado em {{ anexo.data_envio }}
                     </small>
 
                 </div>
 
                 <a
-                    href="/anexo/{{ anexo[0] }}"
+                    href="/anexo/{{ anexo.id }}"
                     target="_blank"
                     class="btn btn-sm btn-outline-primary"
                 >
@@ -298,21 +298,21 @@
                 <div class="d-flex justify-content-between">
 
                     <strong>
-                        {{ comentario[1] }}
+                        {{ comentario.usuario_nome }}
                     </strong>
 
                     <small class="text-muted">
-                        {{ comentario[4] }}
+                        {{ comentario.data }}
                     </small>
 
                 </div>
 
                 <span class="badge bg-secondary mb-2">
-                    {{ comentario[2] }}
+                    {{ comentario.usuario_tipo }}
                 </span>
 
                 <p class="mb-0">
-                    {{ comentario[3] }}
+                    {{ comentario.mensagem }}
                 </p>
 
             </div>
@@ -327,7 +327,7 @@
 
         <hr>
 
-        {% if chamado[3] != "Encerrado" %}
+        {% if chamado.status != "Encerrado" %}
 
             <form method="POST">
 
@@ -391,13 +391,13 @@
                     <div>
 
                         <h6 class="fw-bold mb-1">
-                            {{ item[1] }}
+                            {{ item.mensagem }}
                         </h6>
 
-                        {% if item[3] %}
+                        {% if item.usuario_nome %}
 
                             <small class="text-muted">
-                                {{ item[3] }} — {{ item[4] }}
+                                {{ item.usuario_nome }} — {{ item.usuario_tipo }}
                             </small>
 
                         {% else %}
@@ -411,7 +411,7 @@
                     </div>
 
                     <small class="text-muted">
-                        {{ item[2] }}
+                        {{ item.data }}
                     </small>
 
                 </div>
@@ -459,7 +459,7 @@
                     name="resposta"
                     class="form-control"
                     rows="6"
-                >{{ chamado[6] }}</textarea>
+                >{{ chamado.resposta }}</textarea>
 
             </div>
 
@@ -474,19 +474,19 @@
                     class="form-select"
                 >
 
-                    <option value="Aberto" {% if chamado[3] == "Aberto" %}selected{% endif %}>
+                    <option value="Aberto" {% if chamado.status == "Aberto" %}selected{% endif %}>
                         Aberto
                     </option>
 
-                    <option value="Em andamento" {% if chamado[3] == "Em andamento" %}selected{% endif %}>
+                    <option value="Em andamento" {% if chamado.status == "Em andamento" %}selected{% endif %}>
                         Em andamento
                     </option>
 
-                    <option value="Resolvido" {% if chamado[3] == "Resolvido" %}selected{% endif %}>
+                    <option value="Resolvido" {% if chamado.status == "Resolvido" %}selected{% endif %}>
                         Resolvido
                     </option>
 
-                    <option value="Encerrado" {% if chamado[3] == "Encerrado" %}selected{% endif %}>
+                    <option value="Encerrado" {% if chamado.status == "Encerrado" %}selected{% endif %}>
                         Encerrado
                     </option>
 
