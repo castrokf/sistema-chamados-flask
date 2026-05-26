@@ -14,13 +14,19 @@ Aplicação publicada no Render:
 https://sistema-chamados-flask.onrender.com
 ```
 
-Contas fictícias para teste:
+Contas fictícias para testar os três perfis principais:
 
 ```text
 Admin: admin@demo.com
-Suporte 1: suporte1@demo.com
-Suporte 2: suporte2@demo.com
+Suporte: suporte1@demo.com
+Usuário: ana.martins@demo.com
 Senha: Demo@1234
+```
+
+Conta extra de suporte:
+
+```text
+suporte2@demo.com
 ```
 
 Observação: por estar hospedado em um plano gratuito, o primeiro acesso pode demorar alguns segundos caso o serviço esteja em repouso.
