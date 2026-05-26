@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div>
+
+        <h1 class="fw-bold">
+            Usuários
+        </h1>
+
+        <p class="text-muted">
+            Gerencie permissões de acesso ao sistema.
+        </p>
+
+    </div>
+
+    <a
+        href="/dashboard"
+        class="btn btn-outline-dark"
+    >
+        Voltar ao Início
+    </a>
+
+</div>
+
+<div class="card shadow-sm border-0">
+
+    <div class="card-body">
+
+        <table class="table table-hover align-middle">
+
+            <thead class="table-dark">
+
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Tipo</th>
+                    <th>Ação</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for usuario in usuarios %}
+
+                <tr>
+
+                    <td>
+                        #{{ usuario[0] }}
+                    </td>
+
+                    <td>
+                        {{ usuario[1] }}
+                    </td>
+
+                    <td>
+                        {{ usuario[2] }}
+                    </td>
+
+                    <td>
+
+                        {% if usuario[3] == "admin" %}
+
+                            <span class="badge bg-warning text-dark">
+                                Admin
+                            </span>
+
+                        {% elif usuario[3] == "suporte" %}
+
+                            <span class="badge bg-info text-dark">
+                                Suporte
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-secondary">
+                                Cliente
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if usuario[0] == session["usuario_id"] %}
+
+                            <span class="text-muted">
+                                Conta atual
+                            </span>
+
+                        {% else %}
+
+                            <form
+                                method="POST"
+                                action="/admin/usuarios/{{ usuario[0] }}/tipo"
+                                class="d-flex gap-2"
+                            >
+
+                                <select
+                                    name="tipo"
+                                    class="form-select form-select-sm"
+                                    style="max-width: 140px;"
+                                >
+
+                                    <option
+                                     value="cliente"
+                                    {% if usuario[3] == "cliente" %}selected{% endif %}
+                                    >
+                                        Cliente
+                                    </option>
+
+                                    <option
+                                        value="suporte"
+                                        {% if usuario[3] == "suporte" %}selected{% endif %}
+                                    >
+                                        Suporte
+                                    </option>
+
+                                    <option
+                                        value="admin"
+                                        {% if usuario[3] == "admin" %}selected{% endif %}
+                                    >
+                                        Admin
+                                    </option>
+
+                                </select>
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-primary"
+                                >
+                                    Salvar
+                                </button>
+
+                            </form>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Nenhum usuário encontrado.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+    <title id="title">Logo genérica de atendimento</title>
+    <desc id="desc">Ícone de balão de conversa com confirmação</desc>
+    <path
+        d="M18 17.5H46C50.1421 17.5 53.5 20.8579 53.5 25V38C53.5 42.1421 50.1421 45.5 46 45.5H33.5L22.5 52V45.5H18C13.8579 45.5 10.5 42.1421 10.5 38V25C10.5 20.8579 13.8579 17.5 18 17.5Z"
+        stroke="white"
+        stroke-width="5"
+        stroke-linejoin="round"
+    />
+    <path
+        d="M24.5 31.5L30.5 37.5L41 27"
+        stroke="white"
+        stroke-width="5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+</svg>

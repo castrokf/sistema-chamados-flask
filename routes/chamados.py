@@ -27,7 +27,11 @@ from database import (
     listar_chamados_recentes_admin,
     salvar_anexo,
     listar_anexos,
-    buscar_anexo
+    buscar_anexo,
+    buscar_responsavel_chamado,
+    contar_chamados_sem_responsavel,
+    contar_chamados_responsavel,
+    contar_chamados_atrasados
 )
 
 from datetime import datetime, timedelta
@@ -86,7 +90,7 @@ def dashboard():
     usuario_id = session["usuario_id"]
     usuario_tipo = session["usuario_tipo"]
 
-    if usuario_tipo == "admin":
+    if usuario_tipo in ["admin", "suporte"]:
 
         total = contar_todos_chamados()
 
@@ -104,6 +108,14 @@ def dashboard():
 
         chamados_recentes = listar_chamados_recentes_admin()
 
+        sem_responsavel = contar_chamados_sem_responsavel()
+
+        meus_atendimentos = contar_chamados_responsavel(
+            usuario_id
+        )
+
+        atrasados = contar_chamados_atrasados()
+
         return render_template(
             "dashboard.html",
             nome=session["usuario_nome"],
@@ -112,7 +124,10 @@ def dashboard():
             abertos=abertos,
             andamento=andamento,
             resolvidos=resolvidos,
-            chamados_recentes=chamados_recentes
+            chamados_recentes=chamados_recentes,
+            sem_responsavel=sem_responsavel,
+            meus_atendimentos=meus_atendimentos,
+            atrasados=atrasados
         )
 
     total = contar_chamados_usuario(
@@ -186,6 +201,7 @@ def novo_chamado():
 
         registrar_historico(
             id_chamado,
+            session["usuario_id"],
             "Chamado criado pelo usuário",
             data_criacao
         )
@@ -218,6 +234,7 @@ def novo_chamado():
 
                 registrar_historico(
                     id_chamado,
+                    session["usuario_id"],
                     "Anexo enviado pelo usuário",
                     data_criacao
                 )
@@ -287,6 +304,10 @@ def visualizar_chamado(id_chamado):
 
     chamado = buscar_chamado(id_chamado)
 
+    responsavel = buscar_responsavel_chamado(
+        id_chamado
+    )
+
     if not chamado:
 
         flash(
@@ -300,7 +321,7 @@ def visualizar_chamado(id_chamado):
     tipo_usuario = session["usuario_tipo"]
     dono_chamado = chamado[5]
 
-    if tipo_usuario != "admin" and usuario_logado != dono_chamado:
+    if tipo_usuario not in ["admin", "suporte"] and usuario_logado != dono_chamado:
 
         flash(
             "Você não tem permissão para acessar este chamado.",
@@ -318,7 +339,7 @@ def visualizar_chamado(id_chamado):
     )
 
     anexos = listar_anexos(
-    id_chamado
+        id_chamado
     )
 
     if request.method == "POST":
@@ -364,11 +385,12 @@ def visualizar_chamado(id_chamado):
 
             registrar_historico(
                 id_chamado,
+                usuario_logado,
                 "Novo comentário adicionado",
                 data_comentario
             )
 
-            if tipo_usuario != "admin" and chamado[3] == "Resolvido":
+            if tipo_usuario not in ["admin", "suporte"] and chamado[3] == "Resolvido":
 
                 atualizar_chamado(
                     id_chamado,
@@ -378,6 +400,7 @@ def visualizar_chamado(id_chamado):
 
                 registrar_historico(
                     id_chamado,
+                    usuario_logado,
                     "Chamado reaberto pelo cliente",
                     data_comentario
                 )
@@ -393,7 +416,7 @@ def visualizar_chamado(id_chamado):
 
         if acao == "atualizar_chamado":
 
-            if tipo_usuario != "admin":
+            if tipo_usuario not in ["admin", "suporte"]:
 
                 flash(
                     "Apenas administradores podem atualizar chamados.",
@@ -439,6 +462,7 @@ def visualizar_chamado(id_chamado):
 
                 registrar_historico(
                     id_chamado,
+                    usuario_logado,
                     f"Status alterado de {chamado[3]} para {status}",
                     data_atualizacao
                 )
@@ -447,6 +471,7 @@ def visualizar_chamado(id_chamado):
 
                 registrar_historico(
                     id_chamado,
+                    usuario_logado,
                     "Resposta administrativa atualizada",
                     data_atualizacao
                 )
@@ -465,7 +490,8 @@ def visualizar_chamado(id_chamado):
         chamado=chamado,
         historico=historico,
         comentarios=comentarios,
-        anexos=anexos
+        anexos=anexos,
+        responsavel=responsavel
     )
 
 # =========================
@@ -500,7 +526,7 @@ def visualizar_anexo(id_anexo):
         return redirect("/dashboard")
 
     if (
-        session.get("usuario_tipo") != "admin"
+        session.get("usuario_tipo") not in ["admin", "suporte"]
         and session.get("usuario_id") != chamado[5]
     ):
 

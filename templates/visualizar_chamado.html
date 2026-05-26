@@ -16,7 +16,7 @@
 
     </div>
 
-    {% if session.get("usuario_tipo") == "admin" %}
+    {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
 
         <a
             href="/admin"
@@ -157,6 +157,47 @@
 
                 </div>
 
+                <div class="mb-3">
+
+                    <strong>Responsável:</strong>
+
+                    <br>
+
+                    {% if responsavel %}
+
+                        <span class="badge bg-dark mt-2">
+                            {{ responsavel }}
+                        </span>
+
+                    {% else %}
+
+                        <span class="text-muted d-inline-block mt-2">
+                            Ainda não atribuído
+                        </span>
+
+                    {% endif %}
+
+                    {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+
+                        <form
+                            method="POST"
+                            action="/admin/chamado/{{ chamado[0] }}/assumir"
+                            class="mt-2"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn btn-sm btn-outline-primary"
+                            >
+                                Assumir atendimento
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                </div>
+
             </div>
 
         </div>
@@ -190,7 +231,10 @@
 
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
+</div>
+
+
+<div class="card shadow-sm border-0 mb-4">
 
     <div class="card-body">
 
@@ -235,8 +279,6 @@
         {% endfor %}
 
     </div>
-
-</div>
 
 </div>
 
@@ -344,13 +386,35 @@
 
             <div class="border-start border-4 ps-3 mb-4">
 
-                <h6 class="fw-bold">
-                    {{ item[2] }}
-                </h6>
+                <div class="d-flex justify-content-between align-items-center">
 
-                <small class="text-muted">
-                    {{ item[3] }}
-                </small>
+                    <div>
+
+                        <h6 class="fw-bold mb-1">
+                            {{ item[1] }}
+                        </h6>
+
+                        {% if item[3] %}
+
+                            <small class="text-muted">
+                                {{ item[3] }} — {{ item[4] }}
+                            </small>
+
+                        {% else %}
+
+                            <small class="text-muted">
+                                Sistema
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+                    <small class="text-muted">
+                        {{ item[2] }}
+                    </small>
+
+                </div>
 
             </div>
 
@@ -367,7 +431,7 @@
 </div>
 
 
-{% if session.get("usuario_tipo") == "admin" %}
+{% if session.get("usuario_tipo") in ["admin", "suporte"] %}
 
 <div class="card shadow-sm border-0">
 

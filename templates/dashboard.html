@@ -7,14 +7,14 @@
     <div>
 
         <h1 class="fw-bold">
-            Dashboard
+            Início
         </h1>
 
         <p class="text-muted">
 
             Bem-vindo, {{ nome }}
 
-            {% if tipo_usuario == "admin" %}
+            {% if tipo_usuario in ["admin", "suporte"] %}
                 — visão geral administrativa
             {% else %}
                 — visão dos seus chamados
@@ -24,7 +24,7 @@
 
     </div>
 
-    {% if tipo_usuario == "admin" %}
+    {% if tipo_usuario in ["admin", "suporte"] %}
 
         <a
             href="/admin"
@@ -132,6 +132,108 @@
 </div>
 
 
+{% if tipo_usuario in ["admin", "suporte"] %}
+
+<div class="row g-4 mb-5">
+
+    <div class="col-md-4">
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-body">
+
+                <h6 class="text-muted">
+                    Sem responsável
+                </h6>
+
+                <h2 class="fw-bold text-danger">
+                    {{ sem_responsavel }}
+                </h2>
+
+                <p class="text-muted mb-3">
+                    Chamados que ainda precisam ser assumidos.
+                </p>
+
+                <a
+                    href="/admin?responsavel_id=sem_responsavel"
+                    class="btn btn-sm btn-outline-danger"
+                >
+                    Ver chamados
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-body">
+
+                <h6 class="text-muted">
+                    Meus atendimentos
+                </h6>
+
+                <h2 class="fw-bold text-primary">
+                    {{ meus_atendimentos }}
+                </h2>
+
+                <p class="text-muted mb-3">
+                    Chamados atribuídos à sua conta.
+                </p>
+
+                <a
+                    href="/admin/meus-atendimentos"
+                    class="btn btn-sm btn-outline-primary"
+                >
+                    Ver atendimentos
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-body">
+
+                <h6 class="text-muted">
+                    Atrasados
+                </h6>
+
+                <h2 class="fw-bold text-warning">
+                    {{ atrasados }}
+                </h2>
+
+                <p class="text-muted mb-3">
+                    Chamados fora do prazo de atendimento.
+                </p>
+
+                <a
+                    href="/admin"
+                    class="btn btn-sm btn-outline-warning"
+                >
+                    Ver painel
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
 <div class="card shadow-sm border-0">
 
     <div class="card-body">
@@ -142,7 +244,7 @@
                 Chamados recentes
             </h4>
 
-            {% if tipo_usuario == "admin" %}
+            {% if tipo_usuario in ["admin", "suporte"] %}
 
                 <a
                     href="/admin"
@@ -174,7 +276,7 @@
                     <th>Status</th>
                     <th>Prioridade</th>
 
-                    {% if tipo_usuario == "admin" %}
+                    {% if tipo_usuario in ["admin", "suporte"] %}
                         <th>Usuário</th>
                     {% endif %}
 
@@ -191,7 +293,9 @@
                 <tr>
 
                     <td>
-                        #{{ chamado[0] }}
+                        <span class="badge text-bg-light border">
+                            CH-{{ "%04d"|format(chamado[0]) }}
+                        </span>
                     </td>
 
                     <td>
@@ -216,6 +320,12 @@
 
                             <span class="badge bg-success">
                                 Resolvido
+                            </span>
+
+                        {% elif chamado[2] == "Encerrado" %}
+
+                            <span class="badge bg-secondary">
+                                Encerrado
                             </span>
 
                         {% else %}
@@ -252,7 +362,7 @@
 
                     </td>
 
-                    {% if tipo_usuario == "admin" %}
+                    {% if tipo_usuario in ["admin", "suporte"] %}
 
                         <td>
                             {{ chamado[4] }}
@@ -276,7 +386,7 @@
                             href="/chamado/{{ chamado[0] }}"
                             class="btn btn-sm btn-primary"
                         >
-                            Abrir
+                            Ver detalhes
                         </a>
 
                     </td>
@@ -287,14 +397,18 @@
 
                 <tr>
 
-                    {% if tipo_usuario == "admin" %}
+                    {% if tipo_usuario in ["admin", "suporte"] %}
+
                         <td colspan="7" class="text-center text-muted py-4">
                             Nenhum chamado encontrado.
                         </td>
+
                     {% else %}
+
                         <td colspan="6" class="text-center text-muted py-4">
                             Você ainda não possui chamados.
                         </td>
+
                     {% endif %}
 
                 </tr>

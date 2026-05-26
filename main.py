@@ -15,7 +15,9 @@ from database import (
     criar_tabela_historico,
     criar_tabela_comentarios,
     adicionar_coluna_data_limite,
-    criar_tabela_anexos
+    criar_tabela_anexos,
+    adicionar_coluna_usuario_historico,
+    adicionar_coluna_responsavel_chamado
 )
 
 from routes.auth import auth
@@ -24,7 +26,10 @@ from routes.admin import admin
 
 app = Flask(__name__)
 
-app.secret_key = "sistema_chamados"
+app.secret_key = os.environ.get(
+    "FLASK_SECRET_KEY",
+    "sistema_chamados"
+)
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
@@ -45,6 +50,8 @@ criar_tabela_historico()
 criar_tabela_comentarios()
 adicionar_coluna_data_limite()
 criar_tabela_anexos()
+adicionar_coluna_usuario_historico()
+adicionar_coluna_responsavel_chamado()
 
 @app.route("/")
 def home():

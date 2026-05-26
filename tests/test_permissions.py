@@ -1,0 +1,59 @@
+def test_dashboard_exige_login(client):
+    resposta = client.get("/dashboard", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/login"
+
+
+def test_cliente_nao_acessa_painel_admin(client, login):
+    login(
+        nome="Cliente Teste",
+        email="cliente@teste.com",
+        tipo="cliente",
+    )
+
+    resposta = client.get("/admin", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/dashboard"
+
+
+def test_admin_acessa_painel_admin(client, login):
+    login(
+        nome="Admin Teste",
+        email="admin@teste.com",
+        tipo="admin",
+    )
+
+    resposta = client.get("/admin")
+
+    assert resposta.status_code == 200
+    assert "Painel Administrativo" in resposta.get_data(as_text=True)
+
+
+def test_cliente_nao_acessa_chamado_de_outro_usuario(client, login, create_user, db_module):
+    dono = create_user(
+        nome="Dono do Chamado",
+        email="dono@teste.com",
+        tipo="cliente",
+    )
+
+    chamado_id = db_module.criar_chamado(
+        "Chamado restrito",
+        "Chamado criado para testar permissão.",
+        "Alta",
+        dono[0],
+        "01/01/2026 10:00",
+        "2026-01-01 14:00:00",
+    )
+
+    login(
+        nome="Outro Cliente",
+        email="outro@teste.com",
+        tipo="cliente",
+    )
+
+    resposta = client.get(f"/chamado/{chamado_id}", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/dashboard"

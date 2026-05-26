@@ -29,7 +29,7 @@
             href="/novo_chamado"
             class="btn btn-primary"
         >
-            Novo Chamado
+            Abrir Chamado
         </a>
 
     </div>
@@ -83,7 +83,7 @@
             <thead class="table-dark">
 
                 <tr>
-                    <th>ID</th>
+                    <th>Chamado</th>
                     <th>Título</th>
                     <th>Status</th>
                     <th>Prioridade</th>
@@ -100,7 +100,9 @@
                 <tr>
 
                     <td>
-                        #{{ chamado[0] }}
+                        <span class="badge text-bg-light border">
+                            Chamado {{ loop.index }}
+                        </span>
                     </td>
 
                     <td>
@@ -125,6 +127,12 @@
 
                             <span class="badge bg-success">
                                 Resolvido
+                            </span>
+
+                        {% elif chamado[3] == "Encerrado" %}
+
+                            <span class="badge bg-secondary">
+                                Encerrado
                             </span>
 
                         {% else %}

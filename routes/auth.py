@@ -159,8 +159,8 @@ def logout():
     session.clear()
 
     flash(
-        "Logout realizado",
-        "info"
+        "Você saiu do sistema com segurança.",
+        "success"
     )
 
-    return redirect("/")
+    return redirect("/login")

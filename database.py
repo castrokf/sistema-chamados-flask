@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 
@@ -7,7 +8,10 @@ import sqlite3
 def conectar():
 
     conexao = sqlite3.connect(
-        "chamados.db",
+        os.environ.get(
+            "DATABASE_PATH",
+            "chamados.db"
+        ),
         timeout=10
     )
 
@@ -344,6 +348,7 @@ def criar_tabela_historico():
 # =========================
 def registrar_historico(
     chamado_id,
+    usuario_id,
     mensagem,
     data
 ):
@@ -355,12 +360,14 @@ def registrar_historico(
     cursor.execute("""
     INSERT INTO historico_chamados (
         chamado_id,
+        usuario_id,
         mensagem,
         data
     )
-    VALUES (?, ?, ?)
+    VALUES (?, ?, ?, ?)
     """, (
         chamado_id,
+        usuario_id,
         mensagem,
         data
     ))
@@ -381,10 +388,17 @@ def listar_historico(
     cursor = conexao.cursor()
 
     cursor.execute("""
-    SELECT *
+    SELECT
+        historico_chamados.id,
+        historico_chamados.mensagem,
+        historico_chamados.data,
+        usuarios.nome,
+        usuarios.tipo
     FROM historico_chamados
-    WHERE chamado_id = ?
-    ORDER BY id DESC
+    LEFT JOIN usuarios
+        ON historico_chamados.usuario_id = usuarios.id
+    WHERE historico_chamados.chamado_id = ?
+    ORDER BY historico_chamados.id DESC
     """, (chamado_id,))
 
     historico = cursor.fetchall()
@@ -392,76 +406,6 @@ def listar_historico(
     conexao.close()
 
     return historico
-
-
-# =========================
-# LISTAR CHAMADOS
-# =========================
-def listar_todos_chamados():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    SELECT * FROM chamados
-    ORDER BY id DESC
-    """)
-
-    chamados = cursor.fetchall()
-
-    conexao.close()
-
-    return chamados
-
-# =========================
-# LISTAR CHAMADOS ADMIN
-# =========================
-def listar_chamados_admin(status="", prioridade=""):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    query = """
-    SELECT
-        chamados.id,
-        chamados.titulo,
-        chamados.status,
-        chamados.prioridade,
-        usuarios.nome,
-        chamados.data_criacao,
-        chamados.data_limite,
-        CASE
-            WHEN chamados.data_limite IS NOT NULL
-            AND datetime(chamados.data_limite) < datetime('now', 'localtime')
-            AND chamados.status NOT IN ('Resolvido', 'Encerrado')
-            THEN 1
-            ELSE 0
-        END AS atrasado
-    FROM chamados
-    INNER JOIN usuarios
-        ON chamados.usuario_id = usuarios.id
-    WHERE 1 = 1
-    """
-
-    parametros = []
-
-    if status:
-        query += " AND chamados.status = ?"
-        parametros.append(status)
-
-    if prioridade:
-        query += " AND chamados.prioridade = ?"
-        parametros.append(prioridade)
-
-    query += " ORDER BY chamados.id DESC"
-
-    cursor.execute(query, parametros)
-
-    chamados = cursor.fetchall()
-
-    conexao.close()
-
-    return chamados
 
 # =========================
 # TABELA COMENTÁRIOS
@@ -621,7 +565,9 @@ def listar_chamados_recentes_usuario(usuario_id):
 
     return chamados
 
-
+# =========================
+# LISTAR CHAMADOS ADMIN
+# =========================
 def listar_chamados_recentes_admin():
 
     conexao = conectar()
@@ -647,6 +593,74 @@ def listar_chamados_recentes_admin():
     conexao.close()
 
     return chamados
+
+# =========================
+# LISTAR CHAMADOS ADMIN
+# =========================
+def listar_chamados_admin(
+    status="",
+    prioridade="",
+    responsavel_id=""
+):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    query = """
+    SELECT
+        chamados.id,
+        chamados.titulo,
+        chamados.status,
+        chamados.prioridade,
+        usuarios.nome,
+        chamados.data_criacao,
+        chamados.data_limite,
+        CASE
+            WHEN chamados.data_limite IS NOT NULL
+            AND datetime(chamados.data_limite) < datetime('now', 'localtime')
+            AND chamados.status NOT IN ('Resolvido', 'Encerrado')
+            THEN 1
+            ELSE 0
+        END AS atrasado,
+        responsavel.nome
+    FROM chamados
+    INNER JOIN usuarios
+        ON chamados.usuario_id = usuarios.id
+    LEFT JOIN usuarios AS responsavel
+        ON chamados.responsavel_id = responsavel.id
+    WHERE 1 = 1
+    """
+
+    parametros = []
+
+    if status:
+        query += " AND chamados.status = ?"
+        parametros.append(status)
+
+    if prioridade:
+        query += " AND chamados.prioridade = ?"
+        parametros.append(prioridade)
+
+    if responsavel_id == "sem_responsavel":
+
+        query += " AND chamados.responsavel_id IS NULL"
+
+    elif responsavel_id:
+
+        query += " AND chamados.responsavel_id = ?"
+
+        parametros.append(responsavel_id)
+
+    query += " ORDER BY chamados.id DESC"
+
+    cursor.execute(query, parametros)
+
+    chamados = cursor.fetchall()
+
+    conexao.close()
+
+    return chamados
+
 
 # =========================
 # MIGRAÇÃO - DATA LIMITE
@@ -778,3 +792,336 @@ def buscar_anexo(id_anexo):
     conexao.close()
 
     return anexo
+
+# =========================
+# MIGRAÇÃO - USUÁRIO NO HISTÓRICO
+# =========================
+def adicionar_coluna_usuario_historico():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    PRAGMA table_info(historico_chamados)
+    """)
+
+    colunas = cursor.fetchall()
+
+    nomes_colunas = [
+        coluna[1]
+        for coluna in colunas
+    ]
+
+    if "usuario_id" not in nomes_colunas:
+
+        cursor.execute("""
+        ALTER TABLE historico_chamados
+        ADD COLUMN usuario_id INTEGER
+        """)
+
+        conexao.commit()
+
+    conexao.close()
+
+# =========================
+# LISTAR USUÁRIOS
+# =========================
+def listar_usuarios():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT
+        id,
+        nome,
+        email,
+        tipo
+    FROM usuarios
+    ORDER BY id DESC
+    """)
+
+    usuarios = cursor.fetchall()
+
+    conexao.close()
+
+    return usuarios
+
+
+# =========================
+# ATUALIZAR TIPO DE USUÁRIO
+# =========================
+def atualizar_tipo_usuario(
+    usuario_id,
+    novo_tipo
+):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    UPDATE usuarios
+    SET tipo = ?
+    WHERE id = ?
+    """, (
+        novo_tipo,
+        usuario_id
+    ))
+
+    conexao.commit()
+
+    conexao.close()
+
+    # =========================
+# MIGRAÇÃO - RESPONSÁVEL DO CHAMADO
+# =========================
+def adicionar_coluna_responsavel_chamado():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    PRAGMA table_info(chamados)
+    """)
+
+    colunas = cursor.fetchall()
+
+    nomes_colunas = [
+        coluna[1]
+        for coluna in colunas
+    ]
+
+    if "responsavel_id" not in nomes_colunas:
+
+        cursor.execute("""
+        ALTER TABLE chamados
+        ADD COLUMN responsavel_id INTEGER
+        """)
+
+        conexao.commit()
+
+    conexao.close()
+
+
+# =========================
+# LISTAR ADMINS
+# =========================
+def listar_administradores():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT
+        id,
+        nome,
+        email,
+        tipo
+    FROM usuarios
+    WHERE tipo IN ('admin', 'suporte')
+    ORDER BY nome ASC
+    """)
+
+    administradores = cursor.fetchall()
+
+    conexao.close()
+
+    return administradores
+
+
+# =========================
+# ATRIBUIR RESPONSÁVEL
+# =========================
+def atribuir_responsavel_chamado(
+    chamado_id,
+    responsavel_id
+):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    UPDATE chamados
+    SET responsavel_id = ?
+    WHERE id = ?
+    """, (
+        responsavel_id,
+        chamado_id
+    ))
+
+    conexao.commit()
+
+    conexao.close()
+
+# =========================
+# LISTAR CHAMADOS DO RESPONSÁVEL
+# =========================
+def listar_chamados_responsavel(
+    responsavel_id,
+    status="",
+    prioridade=""
+):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    query = """
+    SELECT
+        chamados.id,
+        chamados.titulo,
+        chamados.status,
+        chamados.prioridade,
+        usuarios.nome,
+        chamados.data_criacao,
+        chamados.data_limite,
+        CASE
+            WHEN chamados.data_limite IS NOT NULL
+            AND datetime(chamados.data_limite) < datetime('now', 'localtime')
+            AND chamados.status NOT IN ('Resolvido', 'Encerrado')
+            THEN 1
+            ELSE 0
+        END AS atrasado,
+        responsavel.nome
+    FROM chamados
+    INNER JOIN usuarios
+        ON chamados.usuario_id = usuarios.id
+    LEFT JOIN usuarios AS responsavel
+        ON chamados.responsavel_id = responsavel.id
+    WHERE chamados.responsavel_id = ?
+    """
+
+    parametros = [
+        responsavel_id
+    ]
+
+    if status:
+        query += " AND chamados.status = ?"
+        parametros.append(status)
+
+    if prioridade:
+        query += " AND chamados.prioridade = ?"
+        parametros.append(prioridade)
+
+    query += " ORDER BY chamados.id DESC"
+
+    cursor.execute(query, parametros)
+
+    chamados = cursor.fetchall()
+
+    conexao.close()
+
+    return chamados
+
+# =========================
+# BUSCAR RESPONSÁVEL DO CHAMADO
+# =========================
+def buscar_responsavel_chamado(chamado_id):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT
+        usuarios.nome
+    FROM chamados
+    LEFT JOIN usuarios
+        ON chamados.responsavel_id = usuarios.id
+    WHERE chamados.id = ?
+    """, (chamado_id,))
+
+    responsavel = cursor.fetchone()
+
+    conexao.close()
+
+    if responsavel:
+        return responsavel[0]
+
+    return None
+
+# =========================
+# CHAMADOS SEM RESPONSÁVEL
+# =========================
+def contar_chamados_sem_responsavel():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM chamados
+    WHERE responsavel_id IS NULL
+    AND status NOT IN ('Resolvido', 'Encerrado')
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conexao.close()
+
+    return total
+
+
+# =========================
+# CHAMADOS DO RESPONSÁVEL
+# =========================
+def contar_chamados_responsavel(responsavel_id):
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM chamados
+    WHERE responsavel_id = ?
+    AND status NOT IN ('Resolvido', 'Encerrado')
+    """, (responsavel_id,))
+
+    total = cursor.fetchone()[0]
+
+    conexao.close()
+
+    return total
+
+
+# =========================
+# CHAMADOS ATRASADOS
+# =========================
+def contar_chamados_atrasados():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM chamados
+    WHERE data_limite IS NOT NULL
+    AND datetime(data_limite) < datetime('now', 'localtime')
+    AND status NOT IN ('Resolvido', 'Encerrado')
+    """)
+
+    total = cursor.fetchone()[0]
+
+    conexao.close()
+
+    return total
+
+def listar_atendentes():
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+    SELECT
+        id,
+        nome,
+        email,
+        tipo
+    FROM usuarios
+    WHERE tipo IN ('admin', 'suporte')
+    ORDER BY nome ASC
+    """)
+
+    atendentes = cursor.fetchall()
+
+    conexao.close()
+
+    return atendentes

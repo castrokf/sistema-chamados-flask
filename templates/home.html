@@ -14,41 +14,51 @@
         rel="stylesheet"
     >
 
+    <link
+        href="{{ url_for('static', filename='css/style.css') }}?v=7"
+        rel="stylesheet"
+    >
+
 </head>
 
-<body class="bg-dark text-light">
+<body>
 
-    <div class="container">
+    <div class="public-layout">
 
-        <div
-            class="d-flex flex-column justify-content-center align-items-center"
-            style="height: 100vh;"
-        >
+        <div class="public-card">
 
-            <h1 class="display-3 fw-bold mb-4">
+            <div class="auth-icon mx-auto mb-4">
+                <img
+                    src="{{ url_for('static', filename='img/logo.svg') }}"
+                    alt="Logo da Central de Atendimento"
+                >
+            </div>
+
+            <span class="public-label">
+                Plataforma de atendimento
+            </span>
+
+            <h1>
                 Sistema de Chamados
             </h1>
 
-            <p class="lead text-center mb-5">
-
-                Plataforma para gerenciamento,
-                suporte e acompanhamento
-                de chamados técnicos.
-
+            <p>
+                Organize solicitações, acompanhe atendimentos, registre responsáveis,
+                prazos, comentários e anexos em um único ambiente.
             </p>
 
-            <div>
+            <div class="public-actions">
 
                 <a
                     href="/login"
-                    class="btn btn-primary btn-lg me-3"
+                    class="btn btn-primary"
                 >
                     Fazer Login
                 </a>
 
                 <a
                     href="/register"
-                    class="btn btn-outline-light btn-lg"
+                    class="btn btn-outline-light"
                 >
                     Criar Conta
                 </a>
@@ -59,5 +69,10 @@
 
     </div>
 
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+
 </body>
+
 </html>
