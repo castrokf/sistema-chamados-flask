@@ -5,6 +5,18 @@ def test_dashboard_exige_login(client):
     assert resposta.headers["Location"] == "/login"
 
 
+def test_sessao_antiga_sem_organizacao_redireciona_login(client):
+    with client.session_transaction() as sessao:
+        sessao["usuario_id"] = 1
+        sessao["usuario_nome"] = "Usuario Antigo"
+        sessao["usuario_tipo"] = "admin"
+
+    resposta = client.get("/dashboard", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/login"
+
+
 def test_cliente_nao_acessa_painel_admin(client, login):
     login(
         nome="Cliente Teste",

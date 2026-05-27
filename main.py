@@ -18,6 +18,7 @@ from database import (
 from routes.auth import auth
 from routes.chamados import chamados
 from routes.admin import admin
+from utils.decorators import sessao_autenticada
 from utils.security import csrf_token, validar_csrf_token
 
 
@@ -83,8 +84,11 @@ def proteger_requisicoes_post():
 @app.route("/")
 def home():
 
-    if "usuario_id" in session:
+    if sessao_autenticada():
         return redirect("/dashboard")
+
+    if "usuario_id" in session:
+        session.clear()
 
     return render_template("home.html")
 

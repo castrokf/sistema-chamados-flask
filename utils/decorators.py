@@ -7,19 +7,40 @@ from flask import (
 )
 
 
+def sessao_autenticada():
+    campos_obrigatorios = [
+        "usuario_id",
+        "usuario_nome",
+        "usuario_tipo",
+        "organizacao_id",
+        "organizacao_nome"
+    ]
+
+    return all(
+        campo in session
+        for campo in campos_obrigatorios
+    )
+
+
+def redirecionar_login_sessao_invalida():
+    session.clear()
+
+    flash(
+        "Faça login novamente para continuar.",
+        "warning"
+    )
+
+    return redirect("/login")
+
+
 def login_required(funcao):
 
     @wraps(funcao)
     def wrapper(*args, **kwargs):
 
-        if "usuario_id" not in session:
+        if not sessao_autenticada():
 
-            flash(
-                "Faça login para acessar esta página.",
-                "warning"
-            )
-
-            return redirect("/login")
+            return redirecionar_login_sessao_invalida()
 
         return funcao(*args, **kwargs)
 
@@ -31,14 +52,9 @@ def admin_required(funcao):
     @wraps(funcao)
     def wrapper(*args, **kwargs):
 
-        if "usuario_id" not in session:
+        if not sessao_autenticada():
 
-            flash(
-                "Faça login para acessar esta página.",
-                "warning"
-            )
-
-            return redirect("/login")
+            return redirecionar_login_sessao_invalida()
 
         if session.get("usuario_tipo") != "admin":
 
@@ -59,14 +75,9 @@ def equipe_required(funcao):
     @wraps(funcao)
     def wrapper(*args, **kwargs):
 
-        if "usuario_id" not in session:
+        if not sessao_autenticada():
 
-            flash(
-                "Faça login para acessar esta página.",
-                "warning"
-            )
-
-            return redirect("/login")
+            return redirecionar_login_sessao_invalida()
 
         if session.get("usuario_tipo") not in ["admin", "suporte"]:
 
