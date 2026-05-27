@@ -15,7 +15,7 @@
     >
 
     <link
-        href="{{ url_for('static', filename='css/style.css') }}?v=14"
+        href="{{ url_for('static', filename='css/style.css') }}?v=16"
         rel="stylesheet"
     >
 
@@ -83,6 +83,10 @@
                     >
                         <span>Central</span>
                     </a>
+
+                {% endif %}
+
+                {% if session.get("usuario_tipo") == "suporte" %}
 
                     <a
                         href="/admin/meus-atendimentos"

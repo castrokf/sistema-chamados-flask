@@ -68,30 +68,29 @@
 
             </div>
 
-            <div class="mb-4">
+            <div class="urgent-request mb-4">
 
-                <label class="form-label">
-                    Prioridade
-                </label>
+                <div class="form-check">
 
-                <select
-                    name="prioridade"
-                    class="form-select"
-                >
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="urgencia_extrema"
+                        id="urgencia_extrema"
+                    >
 
-                    <option value="Baixa">
-                        Baixa
-                    </option>
+                    <label
+                        class="form-check-label"
+                        for="urgencia_extrema"
+                    >
+                        Solicitar urgência extrema
+                    </label>
 
-                    <option value="Média">
-                        Média
-                    </option>
+                </div>
 
-                    <option value="Alta">
-                        Alta
-                    </option>
-
-                </select>
+                <div class="form-text">
+                    Use apenas quando o problema impedir uma operação crítica ou causar paralisação imediata.
+                </div>
 
             </div>
 

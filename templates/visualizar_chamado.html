@@ -105,7 +105,13 @@
 
                     <br>
 
-                    {% if chamado.prioridade == "Alta" %}
+                    {% if chamado.prioridade == "Urgente" %}
+
+                        <span class="badge bg-dark">
+                            Urgente
+                        </span>
+
+                    {% elif chamado.prioridade == "Alta" %}
 
                         <span class="badge bg-danger">
                             Alta
@@ -177,7 +183,7 @@
 
                     {% endif %}
 
-                    {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+                    {% if session.get("usuario_tipo") == "suporte" %}
 
                         <form
                             method="POST"

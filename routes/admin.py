@@ -14,7 +14,7 @@ from database import (
     listar_chamados_admin,
     listar_usuarios,
     atualizar_tipo_usuario,
-    listar_administradores,
+    listar_suportes,
     atribuir_responsavel_chamado,
     registrar_historico,
     listar_chamados_responsavel,
@@ -27,7 +27,8 @@ from sqlalchemy.exc import IntegrityError
 
 from utils.decorators import (
     admin_required,
-    equipe_required
+    equipe_required,
+    suporte_required
 )
 
 
@@ -55,7 +56,7 @@ def painel_admin():
         organizacao_id
     )
 
-    administradores = listar_administradores(
+    administradores = listar_suportes(
         organizacao_id
     )
 
@@ -216,6 +217,24 @@ def alterar_responsavel_chamado(chamado_id):
 
         return redirect("/admin")
 
+    suportes = listar_suportes(
+        session["organizacao_id"]
+    )
+
+    suporte_ids = [
+        str(suporte["id"])
+        for suporte in suportes
+    ]
+
+    if responsavel_id not in suporte_ids:
+
+        flash(
+            "Selecione um usuário de suporte para assumir o atendimento.",
+            "danger"
+        )
+
+        return redirect("/admin")
+
     atribuir_responsavel_chamado(
         chamado_id,
         responsavel_id,
@@ -241,7 +260,7 @@ def alterar_responsavel_chamado(chamado_id):
     return redirect("/admin")
 
 @admin.route("/admin/meus-atendimentos")
-@equipe_required
+@suporte_required
 def meus_atendimentos():
 
     status = request.args.get("status", "")
@@ -255,7 +274,7 @@ def meus_atendimentos():
         session["organizacao_id"]
     )
 
-    administradores = listar_administradores(
+    administradores = listar_suportes(
         session["organizacao_id"]
     )
 
@@ -272,7 +291,7 @@ def meus_atendimentos():
     "/admin/chamado/<int:chamado_id>/assumir",
     methods=["POST"]
 )
-@equipe_required
+@suporte_required
 def assumir_chamado(chamado_id):
 
     chamado = buscar_chamado(

@@ -43,6 +43,32 @@ def test_admin_acessa_painel_admin(client, login):
     assert "Central de Atendimentos" in resposta.get_data(as_text=True)
 
 
+def test_meus_atendimentos_e_exclusivo_do_suporte(client, login):
+    login(
+        nome="Admin Teste",
+        email="admin.meus@teste.com",
+        tipo="admin",
+    )
+
+    resposta = client.get("/admin/meus-atendimentos", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/dashboard"
+
+
+def test_suporte_acessa_meus_atendimentos(client, login):
+    login(
+        nome="Suporte Teste",
+        email="suporte.meus@teste.com",
+        tipo="suporte",
+    )
+
+    resposta = client.get("/admin/meus-atendimentos")
+
+    assert resposta.status_code == 200
+    assert "Meus Atendimentos" in resposta.get_data(as_text=True)
+
+
 def test_admin_cria_acesso_interno(client, login, db_module, csrf_token):
     login(
         nome="Admin Teste",

@@ -24,6 +24,7 @@ from database import (
     listar_comentarios,
     contar_todos_chamados,
     contar_todos_chamados_status,
+    contar_todos_chamados_prioridade,
     listar_chamados_recentes_usuario,
     listar_chamados_recentes_admin,
     salvar_anexo,
@@ -50,6 +51,7 @@ chamados = Blueprint(
 def calcular_data_limite(prioridade):
 
     horas_por_prioridade = {
+        "Urgente": 1,
         "Alta": 4,
         "Média": 24,
         "Baixa": 72
@@ -134,6 +136,11 @@ def dashboard():
             organizacao_id
         )
 
+        urgentes = contar_todos_chamados_prioridade(
+            "Urgente",
+            organizacao_id
+        )
+
         chamados_recentes = listar_chamados_recentes_admin(
             organizacao_id
         )
@@ -142,10 +149,14 @@ def dashboard():
             organizacao_id
         )
 
-        meus_atendimentos = contar_chamados_responsavel(
-            usuario_id,
-            organizacao_id
-        )
+        meus_atendimentos = 0
+
+        if usuario_tipo == "suporte":
+
+            meus_atendimentos = contar_chamados_responsavel(
+                usuario_id,
+                organizacao_id
+            )
 
         atrasados = contar_chamados_atrasados(
             organizacao_id
@@ -173,10 +184,12 @@ def dashboard():
             abertos=abertos,
             andamento=andamento,
             resolvidos=resolvidos,
+            encerrados=encerrados,
             chamados_recentes=chamados_recentes,
             sem_responsavel=sem_responsavel,
             meus_atendimentos=meus_atendimentos,
             atrasados=atrasados,
+            urgentes=urgentes,
             status_grafico=status_grafico,
             operacao_grafico=operacao_grafico
         )
@@ -243,7 +256,8 @@ def novo_chamado():
 
         titulo = request.form["titulo"]
         descricao = request.form["descricao"]
-        prioridade = request.form["prioridade"]
+        urgencia_extrema = request.form.get("urgencia_extrema") == "on"
+        prioridade = "Urgente" if urgencia_extrema else "Média"
         usuario_id = session["usuario_id"]
 
         data_criacao = datetime.now().strftime(
@@ -270,6 +284,15 @@ def novo_chamado():
             "Chamado criado pelo usuário",
             data_criacao
         )
+
+        if urgencia_extrema:
+
+            registrar_historico(
+                id_chamado,
+                session["usuario_id"],
+                "Solicitação marcada como urgência extrema pelo usuário",
+                data_criacao
+            )
 
         arquivo = request.files.get("anexo")
 

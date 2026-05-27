@@ -91,3 +91,26 @@ def equipe_required(funcao):
         return funcao(*args, **kwargs)
 
     return wrapper
+
+
+def suporte_required(funcao):
+
+    @wraps(funcao)
+    def wrapper(*args, **kwargs):
+
+        if not sessao_autenticada():
+
+            return redirecionar_login_sessao_invalida()
+
+        if session.get("usuario_tipo") != "suporte":
+
+            flash(
+                "Acesso permitido apenas para suporte.",
+                "danger"
+            )
+
+            return redirect("/dashboard")
+
+        return funcao(*args, **kwargs)
+
+    return wrapper

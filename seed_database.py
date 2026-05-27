@@ -206,6 +206,7 @@ def inserir_chamados(ids, organizacao_id):
         "Baixa",
         "Média",
         "Alta",
+        "Urgente",
     ]
 
     agora = datetime.now().replace(second=0, microsecond=0)
@@ -219,7 +220,9 @@ def inserir_chamados(ids, organizacao_id):
             prioridade = prioridade_opcoes[(indice + extra) % len(prioridade_opcoes)]
             data_abertura = agora - timedelta(days=indice + extra, hours=extra * 3)
 
-            if prioridade == "Alta":
+            if prioridade == "Urgente":
+                data_limite = data_abertura + timedelta(hours=1)
+            elif prioridade == "Alta":
                 data_limite = data_abertura + timedelta(hours=4)
             elif prioridade == "Média":
                 data_limite = data_abertura + timedelta(hours=24)

@@ -41,7 +41,7 @@
                 Ver central
             </a>
 
-        {% else %}
+        {% elif session.get("usuario_tipo") == "suporte" %}
 
             <a
                 href="/admin/meus-atendimentos"
@@ -121,6 +121,10 @@
                         Todas
                     </option>
 
+                    <option value="Urgente" {% if prioridade == "Urgente" %}selected{% endif %}>
+                        Urgente
+                    </option>
+
                     <option value="Baixa" {% if prioridade == "Baixa" %}selected{% endif %}>
                         Baixa
                     </option>
@@ -143,7 +147,7 @@
                 <div class="col-md-3">
 
                     <label class="form-label">
-                        Responsável
+                        Suporte
                     </label>
 
                     <select
@@ -234,7 +238,7 @@
                     <th>Usuário</th>
                     <th>Data</th>
                     <th>Prazo</th>
-                    <th>Responsável</th>
+                    <th>Suporte</th>
                     <th>Ação</th>
                 </tr>
 
@@ -294,7 +298,13 @@
 
                     <td data-label="Prioridade">
 
-                        {% if chamado.prioridade == "Alta" %}
+                        {% if chamado.prioridade == "Urgente" %}
+
+                            <span class="badge bg-dark">
+                                Urgente
+                            </span>
+
+                        {% elif chamado.prioridade == "Alta" %}
 
                             <span class="badge bg-danger">
                                 Alta
@@ -348,7 +358,7 @@
 
                     </td>
 
-                    <td data-label="Responsável">
+                    <td data-label="Suporte">
 
                         <form
                             method="POST"

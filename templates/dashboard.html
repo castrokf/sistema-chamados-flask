@@ -130,213 +130,111 @@
 </div>
 
 
-<div class="row g-4 mb-5">
-
-    <div class="{% if tipo_usuario in ['admin', 'suporte'] %}col-lg-7{% else %}col-lg-12{% endif %}">
-
-        <div class="card shadow-sm border-0 chart-card">
-
-            <div class="card-body">
-
-                <div class="section-heading">
-                    <div>
-                        <h4>
-                            Distribuição por status
-                        </h4>
-                        <p>
-                            Leitura rápida do volume atual por etapa de atendimento.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="chart-list">
-
-                    {% for item in status_grafico %}
-
-                        <div class="chart-row">
-
-                            <div class="chart-meta">
-                                <span class="chart-dot {{ item.classe }}"></span>
-                                <span>{{ item.rotulo }}</span>
-                            </div>
-
-                            <div class="chart-track">
-                                <span
-                                    class="chart-fill {{ item.classe }}"
-                                    style="width: {{ item.percentual }}%;"
-                                ></span>
-                            </div>
-
-                            <strong>
-                                {{ item.valor }}
-                            </strong>
-
-                        </div>
-
-                    {% endfor %}
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    {% if tipo_usuario in ["admin", "suporte"] %}
-
-        <div class="col-lg-5">
-
-            <div class="card shadow-sm border-0 chart-card">
-
-                <div class="card-body">
-
-                    <div class="section-heading">
-                        <div>
-                            <h4>
-                                Prioridade operacional
-                            </h4>
-                            <p>
-                                Pontos que exigem atenção da equipe.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="chart-list">
-
-                        {% for item in operacao_grafico %}
-
-                            <div class="chart-row">
-
-                                <div class="chart-meta">
-                                    <span class="chart-dot {{ item.classe }}"></span>
-                                    <span>{{ item.rotulo }}</span>
-                                </div>
-
-                                <div class="chart-track">
-                                    <span
-                                        class="chart-fill {{ item.classe }}"
-                                        style="width: {{ item.percentual }}%;"
-                                    ></span>
-                                </div>
-
-                                <strong>
-                                    {{ item.valor }}
-                                </strong>
-
-                            </div>
-
-                        {% endfor %}
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    {% endif %}
-
-</div>
-
-
 {% if tipo_usuario in ["admin", "suporte"] %}
 
-<div class="row g-4 mb-5">
+<div class="mini-dashboard-grid mb-5">
 
-    <div class="col-md-4">
+    <details class="mini-dashboard-card" open>
 
-        <div class="card shadow-sm border-0">
+        <summary>
+            <span>Status</span>
+            <strong>{{ total }}</strong>
+        </summary>
 
-            <div class="card-body">
+        <div class="mini-dashboard-body">
 
-                <h6 class="text-muted">
-                    Sem responsável
-                </h6>
+            {% for item in status_grafico %}
 
-                <h2 class="fw-bold text-danger">
-                    {{ sem_responsavel }}
-                </h2>
-
-                <p class="text-muted mb-3">
-                    Atendimentos que ainda precisam ser assumidos.
-                </p>
+                {% if item.rotulo == "Abertos" %}
+                    {% set status_link = "Aberto" %}
+                {% elif item.rotulo == "Resolvidos" %}
+                    {% set status_link = "Resolvido" %}
+                {% elif item.rotulo == "Encerrados" %}
+                    {% set status_link = "Encerrado" %}
+                {% else %}
+                    {% set status_link = item.rotulo %}
+                {% endif %}
 
                 <a
-                    href="/admin?responsavel_id=sem_responsavel"
-                    class="btn btn-sm btn-outline-danger"
+                    href="/admin?status={{ status_link|urlencode }}"
+                    class="mini-dashboard-item"
                 >
-                    Ver chamados
+                    <span class="mini-dot {{ item.classe }}"></span>
+                    <span>{{ item.rotulo }}</span>
+                    <strong>{{ item.valor }}</strong>
                 </a>
 
-            </div>
+            {% endfor %}
 
         </div>
 
-    </div>
+    </details>
 
-    <div class="col-md-4">
+    <details class="mini-dashboard-card">
 
-        <div class="card shadow-sm border-0">
+        <summary>
+            <span>Atenção</span>
+            <strong>{{ urgentes + sem_responsavel + atrasados }}</strong>
+        </summary>
 
-            <div class="card-body">
+        <div class="mini-dashboard-body">
 
-                <h6 class="text-muted">
-                    Meus atendimentos
-                </h6>
+            <a
+                href="/admin?prioridade=Urgente"
+                class="mini-dashboard-item"
+            >
+                <span class="mini-dot risk-critical"></span>
+                <span>Urgentes</span>
+                <strong>{{ urgentes }}</strong>
+            </a>
 
-                <h2 class="fw-bold text-primary">
-                    {{ meus_atendimentos }}
-                </h2>
+            <a
+                href="/admin?responsavel_id=sem_responsavel"
+                class="mini-dashboard-item"
+            >
+                <span class="mini-dot risk-attention"></span>
+                <span>Sem suporte</span>
+                <strong>{{ sem_responsavel }}</strong>
+            </a>
 
-                <p class="text-muted mb-3">
-                    Atendimentos atribuídos à sua conta.
-                </p>
+            <a
+                href="/admin"
+                class="mini-dashboard-item"
+            >
+                <span class="mini-dot risk-late"></span>
+                <span>Fora do prazo</span>
+                <strong>{{ atrasados }}</strong>
+            </a>
+
+        </div>
+
+    </details>
+
+    {% if tipo_usuario == "suporte" %}
+
+        <details class="mini-dashboard-card">
+
+            <summary>
+                <span>Minha fila</span>
+                <strong>{{ meus_atendimentos }}</strong>
+            </summary>
+
+            <div class="mini-dashboard-body">
 
                 <a
                     href="/admin/meus-atendimentos"
-                    class="btn btn-sm btn-outline-primary"
+                    class="mini-dashboard-item"
                 >
-                    Ver atendimentos
+                    <span class="mini-dot risk-owned"></span>
+                    <span>Atribuídos a mim</span>
+                    <strong>{{ meus_atendimentos }}</strong>
                 </a>
 
             </div>
 
-        </div>
+        </details>
 
-    </div>
-
-    <div class="col-md-4">
-
-        <div class="card shadow-sm border-0">
-
-            <div class="card-body">
-
-                <h6 class="text-muted">
-                    Fora do prazo
-                </h6>
-
-                <h2 class="fw-bold text-warning">
-                    {{ atrasados }}
-                </h2>
-
-                <p class="text-muted mb-3">
-                    Atendimentos que ultrapassaram o prazo previsto.
-                </p>
-
-                <a
-                    href="/admin"
-                    class="btn btn-sm btn-outline-warning"
-                >
-                    Ver painel
-                </a>
-
-            </div>
-
-        </div>
-
-    </div>
+    {% endif %}
 
 </div>
 
@@ -449,7 +347,13 @@
 
                     <td data-label="Prioridade">
 
-                        {% if chamado.prioridade == "Alta" %}
+                        {% if chamado.prioridade == "Urgente" %}
+
+                            <span class="badge bg-dark">
+                                Urgente
+                            </span>
+
+                        {% elif chamado.prioridade == "Alta" %}
 
                             <span class="badge bg-danger">
                                 Alta

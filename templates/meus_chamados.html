@@ -147,7 +147,13 @@
 
                     <td data-label="Prioridade">
 
-                        {% if chamado.prioridade == "Alta" %}
+                        {% if chamado.prioridade == "Urgente" %}
+
+                            <span class="badge bg-dark">
+                                Urgente
+                            </span>
+
+                        {% elif chamado.prioridade == "Alta" %}
 
                             <span class="badge bg-danger">
                                 Alta

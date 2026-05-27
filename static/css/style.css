@@ -630,6 +630,108 @@ h1.fw-bold {
     background: var(--primary);
 }
 
+.risk-critical {
+    background: var(--navy);
+}
+
+.mini-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 14px;
+}
+
+.mini-dashboard-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.mini-dashboard-card summary {
+    min-height: 72px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.mini-dashboard-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.mini-dashboard-card summary span {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.mini-dashboard-card summary strong {
+    color: var(--text-main);
+    font-size: 1.55rem;
+    font-weight: 850;
+}
+
+.mini-dashboard-card[open] summary {
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.mini-dashboard-body {
+    display: grid;
+    gap: 2px;
+    padding: 8px;
+}
+
+.mini-dashboard-item {
+    min-height: 42px;
+    color: var(--text-main);
+    text-decoration: none;
+    border-radius: var(--radius);
+    display: grid;
+    grid-template-columns: 10px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    font-weight: 800;
+}
+
+.mini-dashboard-item:hover {
+    background: var(--bg-soft);
+    color: var(--text-main);
+}
+
+.mini-dashboard-item strong {
+    font-weight: 850;
+}
+
+.mini-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+}
+
+.urgent-request {
+    border: 1px solid #efd6a5;
+    background: var(--amber-soft);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+}
+
+.urgent-request .form-check-label {
+    font-weight: 850;
+    color: var(--text-main);
+}
+
+.urgent-request .form-check-input:checked {
+    background-color: var(--amber);
+    border-color: var(--amber);
+}
+
 /* Forms */
 
 .form-label {
@@ -863,6 +965,10 @@ textarea.form-control {
     }
 
     .auth-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .mini-dashboard-grid {
         grid-template-columns: 1fr;
     }
 

@@ -873,6 +873,24 @@ def contar_todos_chamados_status(status, organizacao_id=None):
     """, parametros) or 0
 
 
+def contar_todos_chamados_prioridade(prioridade, organizacao_id=None):
+    parametros = {
+        "prioridade": prioridade
+    }
+    filtro_org = ""
+
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
+
+    return consultar_scalar(f"""
+    SELECT COUNT(*)
+    FROM chamados
+    WHERE prioridade = :prioridade
+    {filtro_org}
+    """, parametros) or 0
+
+
 def listar_chamados_recentes_usuario(usuario_id):
     return consultar_lista("""
     SELECT
@@ -1121,6 +1139,28 @@ def listar_administradores(organizacao_id=None):
         tipo
     FROM usuarios
     WHERE tipo IN ('admin', 'suporte')
+    AND ativo = 1
+    {filtro_org}
+    ORDER BY nome ASC
+    """, parametros)
+
+
+def listar_suportes(organizacao_id=None):
+    parametros = {}
+    filtro_org = ""
+
+    if organizacao_id is not None:
+        filtro_org = "AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
+
+    return consultar_lista(f"""
+    SELECT
+        id,
+        nome,
+        email,
+        tipo
+    FROM usuarios
+    WHERE tipo = 'suporte'
     AND ativo = 1
     {filtro_org}
     ORDER BY nome ASC
