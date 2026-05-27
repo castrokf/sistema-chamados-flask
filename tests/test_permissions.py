@@ -40,7 +40,7 @@ def test_admin_acessa_painel_admin(client, login):
     resposta = client.get("/admin")
 
     assert resposta.status_code == 200
-    assert "Painel Administrativo" in resposta.get_data(as_text=True)
+    assert "Central de Atendimentos" in resposta.get_data(as_text=True)
 
 
 def test_admin_cria_acesso_interno(client, login, db_module, csrf_token):

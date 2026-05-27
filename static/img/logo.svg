@@ -1,14 +1,23 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-    <title id="title">Logo genérica de atendimento</title>
-    <desc id="desc">Ícone de balão de conversa com confirmação</desc>
+    <title id="title">Veyra Desk</title>
+    <desc id="desc">Monograma abstrato em formato de V com marca de atendimento</desc>
     <path
-        d="M18 17.5H46C50.1421 17.5 53.5 20.8579 53.5 25V38C53.5 42.1421 50.1421 45.5 46 45.5H33.5L22.5 52V45.5H18C13.8579 45.5 10.5 42.1421 10.5 38V25C10.5 20.8579 13.8579 17.5 18 17.5Z"
+        d="M15 14L29.5 50C30.4 52.2 33.6 52.2 34.5 50L49 14"
         stroke="white"
-        stroke-width="5"
+        stroke-width="6"
+        stroke-linecap="round"
         stroke-linejoin="round"
     />
     <path
-        d="M24.5 31.5L30.5 37.5L41 27"
+        d="M23 14L32 36L41 14"
+        stroke="white"
+        stroke-width="6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        opacity="0.72"
+    />
+    <path
+        d="M40 42L45 47L54 37"
         stroke="white"
         stroke-width="5"
         stroke-linecap="round"

@@ -7,7 +7,7 @@
     <div>
 
         <h1 class="fw-bold">
-            Início
+            Dashboard
         </h1>
 
         <p class="text-muted">
@@ -17,7 +17,7 @@
             {% if tipo_usuario in ["admin", "suporte"] %}
                 — visão geral administrativa
             {% else %}
-                — visão dos seus chamados
+                — visão dos seus atendimentos
             {% endif %}
 
         </p>
@@ -30,7 +30,7 @@
             href="/admin"
             class="btn btn-warning"
         >
-            Ver Todos os Chamados
+            Ver central
         </a>
 
     {% else %}
@@ -39,7 +39,7 @@
             href="/novo_chamado"
             class="btn btn-primary"
         >
-            Nova Solicitação
+            Novo chamado
         </a>
 
     {% endif %}
@@ -151,7 +151,7 @@
                 </h2>
 
                 <p class="text-muted mb-3">
-                    Chamados que ainda precisam ser assumidos.
+                    Atendimentos que ainda precisam ser assumidos.
                 </p>
 
                 <a
@@ -182,7 +182,7 @@
                 </h2>
 
                 <p class="text-muted mb-3">
-                    Chamados atribuídos à sua conta.
+                    Atendimentos atribuídos à sua conta.
                 </p>
 
                 <a
@@ -213,7 +213,7 @@
                 </h2>
 
                 <p class="text-muted mb-3">
-                    Chamados fora do prazo de atendimento.
+                    Atendimentos fora do prazo de atendimento.
                 </p>
 
                 <a
@@ -241,7 +241,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
 
             <h4 class="mb-0">
-                Chamados recentes
+                Atendimentos recentes
             </h4>
 
             {% if tipo_usuario in ["admin", "suporte"] %}
@@ -386,7 +386,7 @@
                             href="/chamado/{{ chamado.id }}"
                             class="btn btn-sm btn-primary"
                         >
-                            Ver detalhes
+                            Abrir
                         </a>
 
                     </td>

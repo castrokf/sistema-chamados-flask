@@ -1,6 +1,8 @@
-# Portal Interno de Atendimento
+# Veyra Desk
 
-Aplicação web desenvolvida como projeto pessoal de estudo, simulando um portal interno para abertura, acompanhamento e gestão de solicitações de atendimento.
+Sistema interno de atendimento e gestão de chamados.
+
+Aplicação web desenvolvida como projeto pessoal de estudo, simulando um service desk interno para abertura, acompanhamento e gestão de solicitações de atendimento.
 
 O projeto foi pensado para um cenário em que uma organização já possui usuários cadastrados em sua base e precisa oferecer um ambiente controlado para que essas pessoas registrem demandas, acompanhem prazos, consultem respostas e mantenham um histórico de atendimento.
 

@@ -7,11 +7,11 @@
     <div>
 
         <h1 class="fw-bold">
-            Minhas Solicitações
+            Meus Chamados
         </h1>
 
         <p class="text-muted">
-            Acompanhe as solicitações vinculadas ao seu acesso interno.
+            Acompanhe os chamados vinculados ao seu acesso interno.
         </p>
 
     </div>
@@ -29,7 +29,7 @@
             href="/novo_chamado"
             class="btn btn-primary"
         >
-            Nova Solicitação
+            Novo chamado
         </a>
 
     </div>
@@ -101,7 +101,7 @@
 
                     <td data-label="Chamado">
                         <span class="badge text-bg-light border">
-                            Chamado {{ loop.index }}
+                            CH-{{ "%04d"|format(chamado.id) }}
                         </span>
                     </td>
 
