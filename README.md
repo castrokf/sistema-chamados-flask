@@ -1,4 +1,4 @@
-# Veyra Desk
+# Nortia
 
 Sistema interno de atendimento e gestão de chamados.
 
