@@ -183,7 +183,7 @@ def recuperar_senha():
             if os.environ.get("SHOW_RESET_LINK", "false").lower() == "true":
 
                 flash(
-                    "Link de recuperação gerado para ambiente de demonstração.",
+                    "Link de recuperação temporário gerado para validação interna.",
                     "info"
                 )
 
@@ -264,7 +264,7 @@ def redefinir_senha(token):
         marcar_token_recuperacao_usado(token)
 
         flash(
-            "Senha redefinida com sucesso. Acesse o portal com a nova senha.",
+            "Senha redefinida com sucesso. Acesse a plataforma com a nova senha.",
             "success"
         )
 

@@ -3,8 +3,8 @@ from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import create_engine, inspect, text
-DEFAULT_ORG_NAME = "Empresa Demo"
-DEFAULT_ORG_SLUG = "empresa-demo"
+DEFAULT_ORG_NAME = "Nortia Operações"
+DEFAULT_ORG_SLUG = "nortia-operacoes"
 
 _engine = None
 _engine_url = None
@@ -208,10 +208,143 @@ def criar_organizacao(nome, slug):
 def obter_organizacao_padrao_id():
     criar_tabela_organizacoes()
 
+    organizacao_legada = buscar_organizacao_por_slug("empresa-demo")
+
+    if organizacao_legada:
+        return organizacao_legada["id"]
+
     return criar_organizacao(
         DEFAULT_ORG_NAME,
         DEFAULT_ORG_SLUG
     )
+
+
+def aplicar_identidade_corporativa_padrao():
+    organizacao_antiga = buscar_organizacao_por_slug("empresa-demo")
+    organizacao_atual = buscar_organizacao_por_slug(DEFAULT_ORG_SLUG)
+    senha_inicial = None
+
+    if organizacao_antiga and not organizacao_atual:
+        executar("""
+        UPDATE organizacoes
+        SET nome = :nome,
+            slug = :slug
+        WHERE id = :organizacao_id
+        """, {
+            "nome": DEFAULT_ORG_NAME,
+            "slug": DEFAULT_ORG_SLUG,
+            "organizacao_id": organizacao_antiga["id"]
+        })
+    elif organizacao_antiga and organizacao_atual:
+        executar("""
+        UPDATE usuarios
+        SET organizacao_id = :organizacao_atual_id
+        WHERE organizacao_id = :organizacao_antiga_id
+        """, {
+            "organizacao_atual_id": organizacao_atual["id"],
+            "organizacao_antiga_id": organizacao_antiga["id"]
+        })
+
+        executar("""
+        UPDATE chamados
+        SET organizacao_id = :organizacao_atual_id
+        WHERE organizacao_id = :organizacao_antiga_id
+        """, {
+            "organizacao_atual_id": organizacao_atual["id"],
+            "organizacao_antiga_id": organizacao_antiga["id"]
+        })
+
+        executar("""
+        UPDATE organizacoes
+        SET nome = :nome
+        WHERE id = :organizacao_id
+        """, {
+            "nome": DEFAULT_ORG_NAME,
+            "organizacao_id": organizacao_atual["id"]
+        })
+
+        executar("""
+        UPDATE organizacoes
+        SET nome = :nome,
+            slug = :slug,
+            ativo = 0
+        WHERE id = :organizacao_id
+        """, {
+            "nome": "Nortia Arquivo",
+            "slug": f"empresa-demo-arquivo-{organizacao_antiga['id']}",
+            "organizacao_id": organizacao_antiga["id"]
+        })
+    elif organizacao_antiga:
+        executar("""
+        UPDATE organizacoes
+        SET nome = :nome
+        WHERE id = :organizacao_id
+        """, {
+            "nome": DEFAULT_ORG_NAME,
+            "organizacao_id": organizacao_antiga["id"]
+        })
+
+    for email_antigo, email_novo, nome_novo in [
+        ("admin@demo.com", "admin@nortia.internal", "Administrador Nortia"),
+        ("suporte1@demo.com", "marina.atendimento@nortia.internal", "Marina Atendimento"),
+        ("suporte2@demo.com", "rafael.operacoes@nortia.internal", "Rafael Operações"),
+        ("ana.martins@demo.com", "ana.martins@nortia.internal", "Ana Martins"),
+        ("bruno.almeida@demo.com", "bruno.almeida@nortia.internal", "Bruno Almeida"),
+        ("carla.souza@demo.com", "carla.souza@nortia.internal", "Carla Souza"),
+        ("diego.pereira@demo.com", "diego.pereira@nortia.internal", "Diego Pereira"),
+        ("elisa.fernandes@demo.com", "elisa.fernandes@nortia.internal", "Elisa Fernandes"),
+        ("fabio.rocha@demo.com", "fabio.rocha@nortia.internal", "Fabio Rocha"),
+        ("gabriela.lima@demo.com", "gabriela.lima@nortia.internal", "Gabriela Lima"),
+        ("henrique.costa@demo.com", "henrique.costa@nortia.internal", "Henrique Costa"),
+        ("isabela.ramos@demo.com", "isabela.ramos@nortia.internal", "Isabela Ramos"),
+        ("joao.carvalho@demo.com", "joao.carvalho@nortia.internal", "Joao Carvalho"),
+        ("larissa.gomes@demo.com", "larissa.gomes@nortia.internal", "Larissa Gomes"),
+        ("marcelo.nunes@demo.com", "marcelo.nunes@nortia.internal", "Marcelo Nunes"),
+        ("natalia.ribeiro@demo.com", "natalia.ribeiro@nortia.internal", "Natalia Ribeiro"),
+        ("otavio.mendes@demo.com", "otavio.mendes@nortia.internal", "Otavio Mendes"),
+        ("patricia.castro@demo.com", "patricia.castro@nortia.internal", "Patricia Castro"),
+        ("renato.barbosa@demo.com", "renato.barbosa@nortia.internal", "Renato Barbosa"),
+        ("sofia.teixeira@demo.com", "sofia.teixeira@nortia.internal", "Sofia Teixeira"),
+        ("tiago.moreira@demo.com", "tiago.moreira@nortia.internal", "Tiago Moreira"),
+        ("vanessa.cardoso@demo.com", "vanessa.cardoso@nortia.internal", "Vanessa Cardoso"),
+        ("william.araujo@demo.com", "william.araujo@nortia.internal", "William Araujo"),
+    ]:
+        usuario_novo = consultar_um("""
+        SELECT id
+        FROM usuarios
+        WHERE email = :email
+        """, {
+            "email": email_novo
+        })
+
+        if usuario_novo:
+            executar("""
+            UPDATE usuarios
+            SET nome = :nome
+            WHERE email = :email
+            """, {
+                "nome": nome_novo,
+                "email": email_novo
+            })
+            continue
+
+        if senha_inicial is None:
+            from argon2 import PasswordHasher
+
+            senha_inicial = PasswordHasher().hash("Nortia@2026")
+
+        executar("""
+        UPDATE usuarios
+        SET nome = :nome,
+            email = :email_novo,
+            senha = :senha
+        WHERE email = :email_antigo
+        """, {
+            "nome": nome_novo,
+            "email_novo": email_novo,
+            "email_antigo": email_antigo,
+            "senha": senha_inicial
+        })
 
 
 def criar_tabela_usuarios():
@@ -1153,6 +1286,7 @@ def inicializar_banco():
     criar_tabela_organizacoes()
     criar_tabela_usuarios()
     adicionar_coluna_organizacao_usuarios()
+    aplicar_identidade_corporativa_padrao()
     criar_tabela_recuperacao_senha()
     criar_tabela_chamados()
     adicionar_coluna_data_limite()

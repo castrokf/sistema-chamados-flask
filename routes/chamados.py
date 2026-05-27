@@ -83,6 +83,20 @@ def extensao_permitida(nome_arquivo):
         and nome_arquivo.rsplit(".", 1)[1].lower() in EXTENSOES_PERMITIDAS
     )
 
+
+def item_grafico(rotulo, valor, classe, total):
+    percentual = 0
+
+    if total:
+        percentual = round((valor / total) * 100)
+
+    return {
+        "rotulo": rotulo,
+        "valor": valor,
+        "classe": classe,
+        "percentual": percentual
+    }
+
 # =========================
 # DASHBOARD
 # =========================
@@ -115,6 +129,11 @@ def dashboard():
             organizacao_id
         )
 
+        encerrados = contar_todos_chamados_status(
+            "Encerrado",
+            organizacao_id
+        )
+
         chamados_recentes = listar_chamados_recentes_admin(
             organizacao_id
         )
@@ -132,6 +151,20 @@ def dashboard():
             organizacao_id
         )
 
+        status_grafico = [
+            item_grafico("Abertos", abertos, "status-open", total),
+            item_grafico("Em andamento", andamento, "status-progress", total),
+            item_grafico("Resolvidos", resolvidos, "status-solved", total),
+            item_grafico("Encerrados", encerrados, "status-closed", total),
+        ]
+
+        operacao_total = sem_responsavel + meus_atendimentos + atrasados
+        operacao_grafico = [
+            item_grafico("Sem responsável", sem_responsavel, "risk-attention", operacao_total),
+            item_grafico("Meus atendimentos", meus_atendimentos, "risk-owned", operacao_total),
+            item_grafico("Fora do prazo", atrasados, "risk-late", operacao_total),
+        ]
+
         return render_template(
             "dashboard.html",
             nome=session["usuario_nome"],
@@ -143,7 +176,9 @@ def dashboard():
             chamados_recentes=chamados_recentes,
             sem_responsavel=sem_responsavel,
             meus_atendimentos=meus_atendimentos,
-            atrasados=atrasados
+            atrasados=atrasados,
+            status_grafico=status_grafico,
+            operacao_grafico=operacao_grafico
         )
 
     total = contar_chamados_usuario(
@@ -165,9 +200,21 @@ def dashboard():
         "Resolvido"
     )
 
+    encerrados = contar_chamados_status(
+        usuario_id,
+        "Encerrado"
+    )
+
     chamados_recentes = listar_chamados_recentes_usuario(
         usuario_id
     )
+
+    status_grafico = [
+        item_grafico("Abertos", abertos, "status-open", total),
+        item_grafico("Em andamento", andamento, "status-progress", total),
+        item_grafico("Resolvidos", resolvidos, "status-solved", total),
+        item_grafico("Encerrados", encerrados, "status-closed", total),
+    ]
 
     return render_template(
         "dashboard.html",
@@ -177,7 +224,8 @@ def dashboard():
         abertos=abertos,
         andamento=andamento,
         resolvidos=resolvidos,
-        chamados_recentes=chamados_recentes
+        chamados_recentes=chamados_recentes,
+        status_grafico=status_grafico
     )
 
 

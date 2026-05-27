@@ -113,7 +113,7 @@ def test_admin_nao_acessa_chamado_de_outra_organizacao(client, login, create_use
 
     chamado_id = db_module.criar_chamado(
         "Chamado de outra organização",
-        "Este chamado não deve aparecer para a empresa demo.",
+        "Este chamado não deve aparecer para a organização principal.",
         "Alta",
         dono["id"],
         "01/01/2026 10:00",
@@ -122,8 +122,8 @@ def test_admin_nao_acessa_chamado_de_outra_organizacao(client, login, create_use
     )
 
     login(
-        nome="Admin Empresa Demo",
-        email="admin.demo@teste.com",
+        nome="Admin Nortia",
+        email="admin.nortia@teste.com",
         tipo="admin",
     )
 

@@ -28,7 +28,7 @@ def salvar_arquivo_chamado(arquivo, chamado_id):
             resource_type="auto",
             folder=os.environ.get(
                 "CLOUDINARY_FOLDER",
-                "portal-interno-atendimento"
+                "nortia-atendimentos"
             ),
             public_id=Path(nome_final).stem,
             use_filename=True,

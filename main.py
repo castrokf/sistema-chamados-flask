@@ -22,14 +22,19 @@ from utils.decorators import sessao_autenticada
 from utils.security import csrf_token, validar_csrf_token
 
 
-def auto_seed_demo():
-    if os.environ.get("AUTO_SEED_DEMO", "").lower() != "true":
+def auto_seed_initial_data():
+    seed_ativo = (
+        os.environ.get("AUTO_SEED_INITIAL_DATA", "").lower() == "true"
+        or os.environ.get("AUTO_SEED_DEMO", "").lower() == "true"
+    )
+
+    if not seed_ativo:
         return
 
-    from seed_database import criar_banco_demo
+    from seed_database import criar_banco_inicial
 
     if contar_usuarios_total() == 0:
-        criar_banco_demo(recriar=False)
+        criar_banco_inicial(recriar=False)
 
 
 app = Flask(__name__)
@@ -58,7 +63,7 @@ app.register_blueprint(admin)
 
 
 inicializar_banco()
-auto_seed_demo()
+auto_seed_initial_data()
 
 
 @app.context_processor

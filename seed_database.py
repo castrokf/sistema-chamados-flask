@@ -20,36 +20,36 @@ DB_PATH = Path(
         BASE_DIR / "chamados.db"
     )
 )
-DEMO_PASSWORD = "Demo@1234"
+ACCESS_PASSWORD = "Nortia@2026"
 
 
 USUARIOS_EQUIPE = [
-    ("Administrador Demo", "admin@demo.com", "admin"),
-    ("Marina Suporte", "suporte1@demo.com", "suporte"),
-    ("Rafael Suporte", "suporte2@demo.com", "suporte"),
+    ("Administrador Nortia", "admin@nortia.internal", "admin"),
+    ("Marina Atendimento", "marina.atendimento@nortia.internal", "suporte"),
+    ("Rafael Operações", "rafael.operacoes@nortia.internal", "suporte"),
 ]
 
 CLIENTES = [
-    ("Ana Martins", "ana.martins@demo.com"),
-    ("Bruno Almeida", "bruno.almeida@demo.com"),
-    ("Carla Souza", "carla.souza@demo.com"),
-    ("Diego Pereira", "diego.pereira@demo.com"),
-    ("Elisa Fernandes", "elisa.fernandes@demo.com"),
-    ("Fabio Rocha", "fabio.rocha@demo.com"),
-    ("Gabriela Lima", "gabriela.lima@demo.com"),
-    ("Henrique Costa", "henrique.costa@demo.com"),
-    ("Isabela Ramos", "isabela.ramos@demo.com"),
-    ("Joao Carvalho", "joao.carvalho@demo.com"),
-    ("Larissa Gomes", "larissa.gomes@demo.com"),
-    ("Marcelo Nunes", "marcelo.nunes@demo.com"),
-    ("Natalia Ribeiro", "natalia.ribeiro@demo.com"),
-    ("Otavio Mendes", "otavio.mendes@demo.com"),
-    ("Patricia Castro", "patricia.castro@demo.com"),
-    ("Renato Barbosa", "renato.barbosa@demo.com"),
-    ("Sofia Teixeira", "sofia.teixeira@demo.com"),
-    ("Tiago Moreira", "tiago.moreira@demo.com"),
-    ("Vanessa Cardoso", "vanessa.cardoso@demo.com"),
-    ("William Araujo", "william.araujo@demo.com"),
+    ("Ana Martins", "ana.martins@nortia.internal"),
+    ("Bruno Almeida", "bruno.almeida@nortia.internal"),
+    ("Carla Souza", "carla.souza@nortia.internal"),
+    ("Diego Pereira", "diego.pereira@nortia.internal"),
+    ("Elisa Fernandes", "elisa.fernandes@nortia.internal"),
+    ("Fabio Rocha", "fabio.rocha@nortia.internal"),
+    ("Gabriela Lima", "gabriela.lima@nortia.internal"),
+    ("Henrique Costa", "henrique.costa@nortia.internal"),
+    ("Isabela Ramos", "isabela.ramos@nortia.internal"),
+    ("Joao Carvalho", "joao.carvalho@nortia.internal"),
+    ("Larissa Gomes", "larissa.gomes@nortia.internal"),
+    ("Marcelo Nunes", "marcelo.nunes@nortia.internal"),
+    ("Natalia Ribeiro", "natalia.ribeiro@nortia.internal"),
+    ("Otavio Mendes", "otavio.mendes@nortia.internal"),
+    ("Patricia Castro", "patricia.castro@nortia.internal"),
+    ("Renato Barbosa", "renato.barbosa@nortia.internal"),
+    ("Sofia Teixeira", "sofia.teixeira@nortia.internal"),
+    ("Tiago Moreira", "tiago.moreira@nortia.internal"),
+    ("Vanessa Cardoso", "vanessa.cardoso@nortia.internal"),
+    ("William Araujo", "william.araujo@nortia.internal"),
 ]
 
 TITULOS = [
@@ -69,7 +69,7 @@ DESCRICOES = [
     "Usuario informa que a acao nao foi concluida e solicita verificacao da equipe.",
     "Usuario relata comportamento diferente do esperado durante o uso da plataforma.",
     "Solicitacao registrada para avaliacao tecnica e retorno do suporte.",
-    "Chamado criado para simular um atendimento real no ambiente de demonstracao.",
+    "Chamado registrado para validar o fluxo operacional de atendimento.",
 ]
 
 RESPOSTAS = {
@@ -83,7 +83,7 @@ def usando_sqlite_local():
     return obter_database_url().startswith("sqlite")
 
 
-def limpar_tabelas_demo():
+def limpar_tabelas_iniciais():
     for tabela in [
         "anexos_chamados",
         "comentarios_chamados",
@@ -110,7 +110,7 @@ def preparar_banco(recriar=True):
     inicializar_banco()
 
     if recriar and not usando_sqlite_local():
-        limpar_tabelas_demo()
+        limpar_tabelas_iniciais()
 
     return obter_organizacao_padrao_id()
 
@@ -143,7 +143,7 @@ def inserir_usuarios(organizacao_id):
             "organizacao_id": organizacao_id,
             "nome": nome,
             "email": email,
-            "senha": ph.hash(DEMO_PASSWORD),
+            "senha": ph.hash(ACCESS_PASSWORD),
             "tipo": tipo,
             "data_criacao": data_sql(datetime.now()),
         })
@@ -173,7 +173,7 @@ def inserir_usuarios(organizacao_id):
             "organizacao_id": organizacao_id,
             "nome": nome,
             "email": email,
-            "senha": ph.hash(DEMO_PASSWORD),
+            "senha": ph.hash(ACCESS_PASSWORD),
             "data_criacao": data_sql(datetime.now()),
         })
         ids[email] = usuario_id
@@ -191,9 +191,9 @@ def data_sql(data):
 
 def inserir_chamados(ids, organizacao_id):
     suporte_ids = [
-        ids["suporte1@demo.com"],
-        ids["suporte2@demo.com"],
-        ids["admin@demo.com"],
+        ids["marina.atendimento@nortia.internal"],
+        ids["rafael.operacoes@nortia.internal"],
+        ids["admin@nortia.internal"],
     ]
 
     status_opcoes = [
@@ -350,7 +350,7 @@ def inserir_chamados(ids, organizacao_id):
                 """, {
                     "chamado_id": chamado_id,
                     "usuario_id": ids[email_cliente],
-                    "mensagem": "Comentario ficticio do usuario para complementar o atendimento.",
+                    "mensagem": "Comentario do usuario para complementar o atendimento.",
                     "data": data_formatada(data_abertura + timedelta(minutes=30)),
                 })
 
@@ -371,12 +371,12 @@ def inserir_chamados(ids, organizacao_id):
                 """, {
                     "chamado_id": chamado_id,
                     "usuario_id": responsavel_id,
-                    "mensagem": "Retorno ficticio da equipe com orientacoes ao cliente.",
+                    "mensagem": "Retorno da equipe com orientacoes ao cliente.",
                     "data": data_formatada(data_abertura + timedelta(hours=2, minutes=20)),
                 })
 
 
-def criar_banco_demo(recriar=True):
+def criar_banco_inicial(recriar=True):
     organizacao_id = preparar_banco(recriar)
     ids = inserir_usuarios(organizacao_id)
     inserir_chamados(ids, organizacao_id)
@@ -385,15 +385,15 @@ def criar_banco_demo(recriar=True):
 
 
 def main():
-    criar_banco_demo()
+    criar_banco_inicial()
 
-    print("Banco ficticio criado com sucesso.")
-    print("Organizacao demo: Empresa Demo")
+    print("Banco inicial criado com sucesso.")
+    print("Organizacao: Nortia Operações")
     print("Usuarios: 1 admin, 2 suportes e 20 usuarios internos.")
-    print("Senha de todos os usuarios demo: Demo@1234")
-    print("Admin: admin@demo.com")
-    print("Suporte 1: suporte1@demo.com")
-    print("Suporte 2: suporte2@demo.com")
+    print("Senha inicial de todos os usuarios: Nortia@2026")
+    print("Admin: admin@nortia.internal")
+    print("Suporte 1: marina.atendimento@nortia.internal")
+    print("Suporte 2: rafael.operacoes@nortia.internal")
 
 
 if __name__ == "__main__":
