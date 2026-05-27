@@ -1,4 +1,4 @@
-def test_cliente_cria_chamado(client, login, db_module):
+def test_cliente_cria_chamado(client, login, db_module, csrf_token):
     usuario, _ = login(
         nome="Cliente Teste",
         email="cliente@teste.com",
@@ -11,6 +11,7 @@ def test_cliente_cria_chamado(client, login, db_module):
             "titulo": "Erro de acesso",
             "descricao": "Não consigo acessar uma área do sistema.",
             "prioridade": "Alta",
+            "csrf_token": csrf_token("/novo_chamado"),
         },
         follow_redirects=False,
     )
@@ -26,7 +27,7 @@ def test_cliente_cria_chamado(client, login, db_module):
     assert len(historico) == 1
 
 
-def test_cliente_adiciona_comentario(client, login, db_module):
+def test_cliente_adiciona_comentario(client, login, db_module, csrf_token):
     usuario, _ = login(
         nome="Cliente Teste",
         email="cliente@teste.com",
@@ -47,6 +48,7 @@ def test_cliente_adiciona_comentario(client, login, db_module):
         data={
             "acao": "comentario",
             "mensagem": "Comentário de acompanhamento.",
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
         },
         follow_redirects=False,
     )
@@ -59,7 +61,7 @@ def test_cliente_adiciona_comentario(client, login, db_module):
     assert comentarios[0]["mensagem"] == "Comentário de acompanhamento."
 
 
-def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module):
+def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module, csrf_token):
     cliente = create_user(
         nome="Cliente Teste",
         email="cliente@teste.com",
@@ -87,6 +89,7 @@ def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module)
             "acao": "atualizar_chamado",
             "resposta": "Chamado resolvido pela equipe.",
             "status": "Resolvido",
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
         },
         follow_redirects=False,
     )
@@ -101,7 +104,7 @@ def test_admin_atualiza_status_do_chamado(client, login, create_user, db_module)
     assert len(historico) == 1
 
 
-def test_suporte_assume_chamado_aberto(client, login, create_user, db_module):
+def test_suporte_assume_chamado_aberto(client, login, create_user, db_module, csrf_token):
     cliente = create_user(
         nome="Cliente Teste",
         email="cliente@teste.com",
@@ -125,6 +128,9 @@ def test_suporte_assume_chamado_aberto(client, login, create_user, db_module):
 
     resposta = client.post(
         f"/admin/chamado/{chamado_id}/assumir",
+        data={
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
+        },
         follow_redirects=False,
     )
 

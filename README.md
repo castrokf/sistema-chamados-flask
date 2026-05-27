@@ -84,6 +84,10 @@ Se alguém tentar acessar `/register`, será redirecionado para login com uma me
 - Indicadores de chamados abertos, em andamento, resolvidos, sem responsável e atrasados.
 - Tela de gerenciamento de acessos internos.
 - Recuperação de senha por token temporário.
+- Proteção CSRF em formulários que alteram dados.
+- Limite simples de tentativas de login por email e origem.
+- Estrutura multiempresa com isolamento por organização.
+- Banco configurável por `DATABASE_URL`, com suporte a PostgreSQL em produção.
 - Acesso a dados por campos nomeados, como `chamado.status` e `usuario.email`.
 - Armazenamento de anexos com suporte a Cloudinary para deploy gratuito.
 - Base fictícia de demonstração.
@@ -108,7 +112,9 @@ Representa a equipe com permissão de gestão. Pode criar acessos internos, alte
 
 - Python
 - Flask
-- SQLite
+- SQLite para desenvolvimento local
+- PostgreSQL para produção
+- SQLAlchemy Core
 - Bootstrap
 - Argon2
 - Pytest
@@ -136,7 +142,7 @@ sistema_chamados/
 Principais partes:
 
 - `main.py`: inicialização da aplicação Flask, registro das rotas e criação das tabelas.
-- `database.py`: funções de conexão, criação de tabelas e operações no SQLite.
+- `database.py`: camada de acesso a dados com SQLAlchemy Core, compatível com SQLite local e PostgreSQL em produção.
 - `services/storage.py`: camada de armazenamento de anexos, com suporte local e Cloudinary.
 - `routes/`: organização das rotas de autenticação, chamados e administração.
 - `templates/`: páginas HTML renderizadas pelo Flask.
@@ -152,8 +158,9 @@ Para facilitar a avaliação do projeto, existe um script de seed:
 python seed_database.py
 ```
 
-Esse script recria o banco `chamados.db` com:
+Esse script recria a base de demonstração com:
 
+- 1 organização fictícia.
 - 1 usuário administrador.
 - 2 usuários de suporte.
 - 20 usuários internos fictícios.
@@ -246,17 +253,45 @@ Os testes cobrem:
 - Login com senha correta.
 - Login com senha incorreta.
 - Recuperação e redefinição de senha.
+- Bloqueio de POST sem token CSRF.
 - Redirecionamento de usuário não autenticado.
 - Bloqueio de acesso de usuário comum ao painel administrativo.
 - Acesso de admin ao painel.
 - Criação de acesso interno por administrador.
 - Bloqueio de acesso a chamado de outro usuário.
+- Bloqueio de acesso a chamado de outra organização.
 - Criação de chamado.
 - Adição de comentário.
 - Atualização de status por admin.
 - Suporte assumindo chamado.
 
 Os testes usam um banco SQLite temporário e não alteram o banco fictício `chamados.db`.
+
+## Banco de Dados
+
+O projeto usa SQLAlchemy Core para manter a camada de dados mais preparada para crescimento.
+
+Por padrão, em desenvolvimento local, o sistema usa SQLite:
+
+```text
+sqlite:///chamados.db
+```
+
+Em produção, configure `DATABASE_URL` com a URL do PostgreSQL:
+
+```text
+DATABASE_URL=postgresql://usuario:senha@host:porta/banco
+```
+
+URLs no formato `postgres://`, comum em algumas plataformas, também são aceitas e convertidas automaticamente para o driver correto.
+
+## Estrutura Multiempresa
+
+A base possui uma tabela de organizações. Usuários e chamados pertencem a uma organização por meio de `organizacao_id`.
+
+Isso permite evoluir o projeto para um cenário SaaS ou multiempresa, onde cada empresa acessa apenas seus próprios usuários, chamados, responsáveis e indicadores.
+
+Na versão demo, todos os dados ficam vinculados à organização fictícia `Empresa Demo`.
 
 ## Recuperação de Senha
 
@@ -268,7 +303,9 @@ No ambiente de demonstração, o link de redefinição pode ser exibido na próp
 SHOW_RESET_LINK=true
 ```
 
-Em um ambiente real, esse token deveria ser enviado por email usando um serviço SMTP ou provedor transacional. A estrutura do fluxo já está preparada para isso: o token expira, só pode ser usado uma vez e redefine a senha com hash Argon2.
+Em um ambiente real, mantenha `SHOW_RESET_LINK=false`. O token deveria ser enviado por email usando um serviço SMTP ou provedor transacional. A estrutura do fluxo já está preparada para isso: o token expira, só pode ser usado uma vez e redefine a senha com hash Argon2.
+
+Além disso, o login possui limite simples de tentativas e as mensagens foram padronizadas para evitar indicar se o email existe ou não.
 
 ## Uploads em Deploy Gratuito
 
@@ -306,8 +343,10 @@ Variáveis de ambiente principais:
 
 ```text
 FLASK_SECRET_KEY=defina-uma-chave-secreta
+DATABASE_URL=use-a-url-real-do-postgresql
 AUTO_SEED_DEMO=true
-SHOW_RESET_LINK=true
+SHOW_RESET_LINK=false
+SESSION_COOKIE_SECURE=true
 ```
 
 Variáveis opcionais para anexos no Cloudinary:
@@ -331,10 +370,13 @@ Durante o desenvolvimento deste projeto, pratiquei conceitos importantes para co
 
 - Organização de uma aplicação Flask em módulos.
 - Uso de Blueprints para separar responsabilidades.
-- Criação e consulta de tabelas com SQLite.
+- Criação e consulta de tabelas com SQLAlchemy Core.
+- Configuração de banco por ambiente com suporte a PostgreSQL.
+- Modelagem inicial multiempresa com isolamento por organização.
 - Uso de linhas nomeadas no acesso ao banco, reduzindo dependência de índices numéricos.
 - Controle de sessão de usuário.
 - Autenticação com hash de senha.
+- Proteção CSRF em formulários POST.
 - Restrições de acesso por tipo de usuário.
 - Criação de fluxo interno de acessos.
 - Separação entre usuários comuns, suporte e administração.
@@ -351,13 +393,12 @@ Durante o desenvolvimento deste projeto, pratiquei conceitos importantes para co
 
 Algumas melhorias que podem ser feitas em versões futuras:
 
-- Migrar o banco de SQLite para PostgreSQL.
+- Criar migrations versionadas com Alembic.
 - Adicionar paginação na listagem de chamados.
 - Enviar links de recuperação por email usando provedor SMTP.
 - Adicionar filtros por período de abertura.
 - Melhorar dashboard com gráficos.
 - Adicionar logs de auditoria mais detalhados.
-- Separar configurações por ambiente.
 - Criar uma API REST para integração futura.
 
 ## Observações

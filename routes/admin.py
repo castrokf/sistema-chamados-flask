@@ -23,7 +23,7 @@ from database import (
 )
 
 from argon2 import PasswordHasher
-from sqlite3 import IntegrityError
+from sqlalchemy.exc import IntegrityError
 
 from utils.decorators import (
     admin_required,
@@ -46,14 +46,18 @@ def painel_admin():
     status = request.args.get("status", "")
     prioridade = request.args.get("prioridade", "")
     responsavel_id = request.args.get("responsavel_id", "")
+    organizacao_id = session["organizacao_id"]
 
     chamados = listar_chamados_admin(
         status,
         prioridade,
-        responsavel_id
+        responsavel_id,
+        organizacao_id
     )
 
-    administradores = listar_administradores()
+    administradores = listar_administradores(
+        organizacao_id
+    )
 
     return render_template(
         "admin.html",
@@ -68,7 +72,9 @@ def painel_admin():
 @admin_required
 def usuarios_admin():
 
-    usuarios = listar_usuarios()
+    usuarios = listar_usuarios(
+        session["organizacao_id"]
+    )
 
     return render_template(
         "usuarios_admin.html",
@@ -125,9 +131,10 @@ def criar_usuario_admin():
 
         criar_usuario(
             nome,
-            email,
+            email.lower(),
             ph.hash(senha),
-            tipo
+            tipo,
+            session["organizacao_id"]
         )
 
         flash(
@@ -180,7 +187,8 @@ def alterar_tipo_usuario(usuario_id):
 
     atualizar_tipo_usuario(
         usuario_id,
-        novo_tipo
+        novo_tipo,
+        session["organizacao_id"]
     )
 
     flash(
@@ -210,7 +218,8 @@ def alterar_responsavel_chamado(chamado_id):
 
     atribuir_responsavel_chamado(
         chamado_id,
-        responsavel_id
+        responsavel_id,
+        session["organizacao_id"]
     )
 
     data_atualizacao = datetime.now().strftime(
@@ -242,10 +251,13 @@ def meus_atendimentos():
     chamados = listar_chamados_responsavel(
         session["usuario_id"],
         status,
-        prioridade
+        prioridade,
+        session["organizacao_id"]
     )
 
-    administradores = listar_administradores()
+    administradores = listar_administradores(
+        session["organizacao_id"]
+    )
 
     return render_template(
     "admin.html",
@@ -263,7 +275,10 @@ def meus_atendimentos():
 @equipe_required
 def assumir_chamado(chamado_id):
 
-    chamado = buscar_chamado(chamado_id)
+    chamado = buscar_chamado(
+        chamado_id,
+        session["organizacao_id"]
+    )
 
     if not chamado:
 
@@ -276,7 +291,8 @@ def assumir_chamado(chamado_id):
 
     atribuir_responsavel_chamado(
         chamado_id,
-        session["usuario_id"]
+        session["usuario_id"],
+        session["organizacao_id"]
     )
 
     data_atualizacao = datetime.now().strftime(
@@ -295,7 +311,8 @@ def assumir_chamado(chamado_id):
         atualizar_chamado(
             chamado_id,
             chamado["resposta"],
-            "Em andamento"
+            "Em andamento",
+            session["organizacao_id"]
         )
 
         registrar_historico(

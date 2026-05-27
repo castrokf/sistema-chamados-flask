@@ -1,20 +1,15 @@
 import os
-import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from argon2 import PasswordHasher
 
 from database import (
-    adicionar_coluna_data_limite,
-    adicionar_coluna_responsavel_chamado,
-    adicionar_coluna_usuario_historico,
-    criar_tabela_anexos,
-    criar_tabela_chamados,
-    criar_tabela_comentarios,
-    criar_tabela_historico,
-    criar_tabela_recuperacao_senha,
-    criar_tabela_usuarios,
+    executar,
+    inicializar_banco,
+    inserir_e_retornar_id,
+    obter_database_url,
+    obter_organizacao_padrao_id,
 )
 
 
@@ -84,10 +79,27 @@ RESPOSTAS = {
 }
 
 
-def preparar_banco():
+def usando_sqlite_local():
+    return obter_database_url().startswith("sqlite")
+
+
+def limpar_tabelas_demo():
+    for tabela in [
+        "anexos_chamados",
+        "comentarios_chamados",
+        "historico_chamados",
+        "recuperacao_senha",
+        "chamados",
+        "usuarios",
+        "organizacoes",
+    ]:
+        executar(f"DELETE FROM {tabela}")
+
+
+def preparar_banco(recriar=True):
     os.chdir(BASE_DIR)
 
-    if DB_PATH.exists():
+    if recriar and usando_sqlite_local() and DB_PATH.exists():
         DB_PATH.unlink()
 
     DB_PATH.parent.mkdir(
@@ -95,40 +107,76 @@ def preparar_banco():
         exist_ok=True
     )
 
-    criar_tabela_usuarios()
-    criar_tabela_recuperacao_senha()
-    criar_tabela_chamados()
-    criar_tabela_historico()
-    criar_tabela_comentarios()
-    adicionar_coluna_data_limite()
-    criar_tabela_anexos()
-    adicionar_coluna_usuario_historico()
-    adicionar_coluna_responsavel_chamado()
+    inicializar_banco()
+
+    if recriar and not usando_sqlite_local():
+        limpar_tabelas_demo()
+
+    return obter_organizacao_padrao_id()
 
 
-def inserir_usuarios(cursor):
+def inserir_usuarios(organizacao_id):
     ph = PasswordHasher()
     ids = {}
 
     for nome, email, tipo in USUARIOS_EQUIPE:
-        cursor.execute(
-            """
-            INSERT INTO usuarios (nome, email, senha, tipo)
-            VALUES (?, ?, ?, ?)
-            """,
-            (nome, email, ph.hash(DEMO_PASSWORD), tipo),
+        usuario_id = inserir_e_retornar_id("""
+        INSERT INTO usuarios (
+            organizacao_id,
+            nome,
+            email,
+            senha,
+            tipo,
+            ativo,
+            data_criacao
         )
-        ids[email] = cursor.lastrowid
+        VALUES (
+            :organizacao_id,
+            :nome,
+            :email,
+            :senha,
+            :tipo,
+            1,
+            :data_criacao
+        )
+        """, {
+            "organizacao_id": organizacao_id,
+            "nome": nome,
+            "email": email,
+            "senha": ph.hash(DEMO_PASSWORD),
+            "tipo": tipo,
+            "data_criacao": data_sql(datetime.now()),
+        })
+        ids[email] = usuario_id
 
     for nome, email in CLIENTES:
-        cursor.execute(
-            """
-            INSERT INTO usuarios (nome, email, senha, tipo)
-            VALUES (?, ?, ?, ?)
-            """,
-            (nome, email, ph.hash(DEMO_PASSWORD), "cliente"),
+        usuario_id = inserir_e_retornar_id("""
+        INSERT INTO usuarios (
+            organizacao_id,
+            nome,
+            email,
+            senha,
+            tipo,
+            ativo,
+            data_criacao
         )
-        ids[email] = cursor.lastrowid
+        VALUES (
+            :organizacao_id,
+            :nome,
+            :email,
+            :senha,
+            'cliente',
+            1,
+            :data_criacao
+        )
+        """, {
+            "organizacao_id": organizacao_id,
+            "nome": nome,
+            "email": email,
+            "senha": ph.hash(DEMO_PASSWORD),
+            "data_criacao": data_sql(datetime.now()),
+        })
+        ids[email] = usuario_id
 
     return ids
 
@@ -141,7 +189,7 @@ def data_sql(data):
     return data.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def inserir_chamados(cursor, ids):
+def inserir_chamados(ids, organizacao_id):
     suporte_ids = [
         ids["suporte1@demo.com"],
         ids["suporte2@demo.com"],
@@ -156,7 +204,7 @@ def inserir_chamados(cursor, ids):
     ]
     prioridade_opcoes = [
         "Baixa",
-        "M\u00e9dia",
+        "Média",
         "Alta",
     ]
 
@@ -173,128 +221,165 @@ def inserir_chamados(cursor, ids):
 
             if prioridade == "Alta":
                 data_limite = data_abertura + timedelta(hours=4)
-            elif prioridade == "M\u00e9dia":
+            elif prioridade == "Média":
                 data_limite = data_abertura + timedelta(hours=24)
             else:
                 data_limite = data_abertura + timedelta(hours=72)
 
             responsavel_id = None
+
             if status != "Aberto" or indice % 3 == 0:
                 responsavel_id = suporte_ids[(indice + extra) % len(suporte_ids)]
 
             resposta = RESPOSTAS.get(status, "")
 
-            cursor.execute(
-                """
-                INSERT INTO chamados (
-                    titulo,
-                    descricao,
-                    status,
-                    prioridade,
-                    usuario_id,
-                    resposta,
-                    data_criacao,
-                    data_limite,
-                    responsavel_id
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    TITULOS[(ticket_numero - 1) % len(TITULOS)],
-                    DESCRICOES[(ticket_numero - 1) % len(DESCRICOES)],
-                    status,
-                    prioridade,
-                    ids[email_cliente],
-                    resposta,
-                    data_formatada(data_abertura),
-                    data_sql(data_limite),
-                    responsavel_id,
-                ),
+            chamado_id = inserir_e_retornar_id("""
+            INSERT INTO chamados (
+                organizacao_id,
+                titulo,
+                descricao,
+                status,
+                prioridade,
+                usuario_id,
+                resposta,
+                data_criacao,
+                data_limite,
+                responsavel_id
             )
-
-            chamado_id = cursor.lastrowid
-
-            cursor.execute(
-                """
-                INSERT INTO historico_chamados (chamado_id, usuario_id, mensagem, data)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    chamado_id,
-                    ids[email_cliente],
-                    "Chamado criado pelo usuario",
-                    data_formatada(data_abertura),
-                ),
+            VALUES (
+                :organizacao_id,
+                :titulo,
+                :descricao,
+                :status,
+                :prioridade,
+                :usuario_id,
+                :resposta,
+                :data_criacao,
+                :data_limite,
+                :responsavel_id
             )
+            """, {
+                "organizacao_id": organizacao_id,
+                "titulo": TITULOS[(ticket_numero - 1) % len(TITULOS)],
+                "descricao": DESCRICOES[(ticket_numero - 1) % len(DESCRICOES)],
+                "status": status,
+                "prioridade": prioridade,
+                "usuario_id": ids[email_cliente],
+                "resposta": resposta,
+                "data_criacao": data_formatada(data_abertura),
+                "data_limite": data_sql(data_limite),
+                "responsavel_id": responsavel_id,
+            })
+
+            executar("""
+            INSERT INTO historico_chamados (
+                chamado_id,
+                usuario_id,
+                mensagem,
+                data
+            )
+            VALUES (
+                :chamado_id,
+                :usuario_id,
+                :mensagem,
+                :data
+            )
+            """, {
+                "chamado_id": chamado_id,
+                "usuario_id": ids[email_cliente],
+                "mensagem": "Chamado criado pelo usuario",
+                "data": data_formatada(data_abertura),
+            })
 
             if responsavel_id:
-                cursor.execute(
-                    """
-                    INSERT INTO historico_chamados (chamado_id, usuario_id, mensagem, data)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        chamado_id,
-                        responsavel_id,
-                        "Atendimento assumido pela equipe de suporte",
-                        data_formatada(data_abertura + timedelta(hours=1)),
-                    ),
+                executar("""
+                INSERT INTO historico_chamados (
+                    chamado_id,
+                    usuario_id,
+                    mensagem,
+                    data
                 )
+                VALUES (
+                    :chamado_id,
+                    :usuario_id,
+                    :mensagem,
+                    :data
+                )
+                """, {
+                    "chamado_id": chamado_id,
+                    "usuario_id": responsavel_id,
+                    "mensagem": "Atendimento assumido pela equipe de suporte",
+                    "data": data_formatada(data_abertura + timedelta(hours=1)),
+                })
 
             if resposta:
-                cursor.execute(
-                    """
-                    INSERT INTO historico_chamados (chamado_id, usuario_id, mensagem, data)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        chamado_id,
-                        responsavel_id,
-                        f"Status atualizado para {status}",
-                        data_formatada(data_abertura + timedelta(hours=2)),
-                    ),
+                executar("""
+                INSERT INTO historico_chamados (
+                    chamado_id,
+                    usuario_id,
+                    mensagem,
+                    data
                 )
+                VALUES (
+                    :chamado_id,
+                    :usuario_id,
+                    :mensagem,
+                    :data
+                )
+                """, {
+                    "chamado_id": chamado_id,
+                    "usuario_id": responsavel_id,
+                    "mensagem": f"Status atualizado para {status}",
+                    "data": data_formatada(data_abertura + timedelta(hours=2)),
+                })
 
             if indice % 2 == 0:
-                cursor.execute(
-                    """
-                    INSERT INTO comentarios_chamados (chamado_id, usuario_id, mensagem, data)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        chamado_id,
-                        ids[email_cliente],
-                        "Comentario ficticio do usuario para complementar o atendimento.",
-                        data_formatada(data_abertura + timedelta(minutes=30)),
-                    ),
+                executar("""
+                INSERT INTO comentarios_chamados (
+                    chamado_id,
+                    usuario_id,
+                    mensagem,
+                    data
                 )
+                VALUES (
+                    :chamado_id,
+                    :usuario_id,
+                    :mensagem,
+                    :data
+                )
+                """, {
+                    "chamado_id": chamado_id,
+                    "usuario_id": ids[email_cliente],
+                    "mensagem": "Comentario ficticio do usuario para complementar o atendimento.",
+                    "data": data_formatada(data_abertura + timedelta(minutes=30)),
+                })
 
             if responsavel_id and indice % 2 == 0:
-                cursor.execute(
-                    """
-                    INSERT INTO comentarios_chamados (chamado_id, usuario_id, mensagem, data)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (
-                        chamado_id,
-                        responsavel_id,
-                        "Retorno ficticio da equipe com orientacoes ao cliente.",
-                        data_formatada(data_abertura + timedelta(hours=2, minutes=20)),
-                    ),
+                executar("""
+                INSERT INTO comentarios_chamados (
+                    chamado_id,
+                    usuario_id,
+                    mensagem,
+                    data
                 )
+                VALUES (
+                    :chamado_id,
+                    :usuario_id,
+                    :mensagem,
+                    :data
+                )
+                """, {
+                    "chamado_id": chamado_id,
+                    "usuario_id": responsavel_id,
+                    "mensagem": "Retorno ficticio da equipe com orientacoes ao cliente.",
+                    "data": data_formatada(data_abertura + timedelta(hours=2, minutes=20)),
+                })
 
 
-def criar_banco_demo():
-    preparar_banco()
-
-    conexao = sqlite3.connect(DB_PATH)
-    cursor = conexao.cursor()
-
-    ids = inserir_usuarios(cursor)
-    inserir_chamados(cursor, ids)
-
-    conexao.commit()
-    conexao.close()
+def criar_banco_demo(recriar=True):
+    organizacao_id = preparar_banco(recriar)
+    ids = inserir_usuarios(organizacao_id)
+    inserir_chamados(ids, organizacao_id)
 
     return DB_PATH
 
@@ -303,6 +388,7 @@ def main():
     criar_banco_demo()
 
     print("Banco ficticio criado com sucesso.")
+    print("Organizacao demo: Empresa Demo")
     print("Usuarios: 1 admin, 2 suportes e 20 usuarios internos.")
     print("Senha de todos os usuarios demo: Demo@1234")
     print("Admin: admin@demo.com")

@@ -355,6 +355,11 @@
                             action="/admin/chamado/{{ chamado.id }}/responsavel"
                             class="d-flex gap-2"
                         >
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                value="{{ csrf_token() }}"
+                            >
 
                             <select
                                 name="responsavel_id"

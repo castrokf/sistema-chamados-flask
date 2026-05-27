@@ -31,7 +31,7 @@ def test_admin_acessa_painel_admin(client, login):
     assert "Painel Administrativo" in resposta.get_data(as_text=True)
 
 
-def test_admin_cria_acesso_interno(client, login, db_module):
+def test_admin_cria_acesso_interno(client, login, db_module, csrf_token):
     login(
         nome="Admin Teste",
         email="admin@teste.com",
@@ -45,6 +45,7 @@ def test_admin_cria_acesso_interno(client, login, db_module):
             "email": "usuario.interno@teste.com",
             "senha": "Senha@123",
             "tipo": "cliente",
+            "csrf_token": csrf_token("/admin/usuarios"),
         },
         follow_redirects=False,
     )
@@ -83,3 +84,57 @@ def test_cliente_nao_acessa_chamado_de_outro_usuario(client, login, create_user,
 
     assert resposta.status_code == 302
     assert resposta.headers["Location"] == "/dashboard"
+
+
+def test_admin_nao_acessa_chamado_de_outra_organizacao(client, login, create_user, db_module):
+    outra_organizacao_id = db_module.criar_organizacao(
+        "Outra Empresa",
+        "outra-empresa",
+    )
+
+    dono = create_user(
+        nome="Usuário Outra Empresa",
+        email="usuario.outra@teste.com",
+        tipo="cliente",
+        organizacao_id=outra_organizacao_id,
+    )
+
+    chamado_id = db_module.criar_chamado(
+        "Chamado de outra organização",
+        "Este chamado não deve aparecer para a empresa demo.",
+        "Alta",
+        dono["id"],
+        "01/01/2026 10:00",
+        "2026-01-01 14:00:00",
+        outra_organizacao_id,
+    )
+
+    login(
+        nome="Admin Empresa Demo",
+        email="admin.demo@teste.com",
+        tipo="admin",
+    )
+
+    resposta = client.get(f"/chamado/{chamado_id}", follow_redirects=False)
+
+    assert resposta.status_code == 302
+    assert resposta.headers["Location"] == "/dashboard"
+
+
+def test_post_sem_csrf_e_bloqueado(client, create_user):
+    create_user(
+        nome="Usuário CSRF",
+        email="csrf@teste.com",
+        senha="Senha@123",
+        tipo="cliente",
+    )
+
+    resposta = client.post(
+        "/login",
+        data={
+            "email": "csrf@teste.com",
+            "senha": "Senha@123",
+        },
+    )
+
+    assert resposta.status_code == 400

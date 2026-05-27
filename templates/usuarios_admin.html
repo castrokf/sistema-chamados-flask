@@ -38,6 +38,11 @@
             action="/admin/usuarios/criar"
             class="row g-3"
         >
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
 
             <div class="col-md-3">
 
@@ -210,6 +215,11 @@
                                 action="/admin/usuarios/{{ usuario.id }}/tipo"
                                 class="d-flex gap-2"
                             >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                >
 
                                 <select
                                     name="tipo"

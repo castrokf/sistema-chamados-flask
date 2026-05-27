@@ -18,7 +18,7 @@ def test_cadastro_publico_redireciona_para_login(client, db_module):
     assert usuario is None
 
 
-def test_login_com_senha_correta_redireciona_para_dashboard(client, create_user):
+def test_login_com_senha_correta_redireciona_para_dashboard(client, create_user, csrf_token):
     create_user(
         nome="Admin Teste",
         email="admin@teste.com",
@@ -31,6 +31,7 @@ def test_login_com_senha_correta_redireciona_para_dashboard(client, create_user)
         data={
             "email": "admin@teste.com",
             "senha": "Senha@123",
+            "csrf_token": csrf_token("/login"),
         },
         follow_redirects=False,
     )
@@ -39,7 +40,7 @@ def test_login_com_senha_correta_redireciona_para_dashboard(client, create_user)
     assert resposta.headers["Location"] == "/dashboard"
 
 
-def test_login_com_senha_incorreta_volta_para_login(client, create_user):
+def test_login_com_senha_incorreta_volta_para_login(client, create_user, csrf_token):
     create_user(
         nome="Cliente Teste",
         email="cliente@teste.com",
@@ -52,6 +53,7 @@ def test_login_com_senha_incorreta_volta_para_login(client, create_user):
         data={
             "email": "cliente@teste.com",
             "senha": "senha-incorreta",
+            "csrf_token": csrf_token("/login"),
         },
         follow_redirects=False,
     )
@@ -60,7 +62,9 @@ def test_login_com_senha_incorreta_volta_para_login(client, create_user):
     assert resposta.headers["Location"] == "/login"
 
 
-def test_recuperacao_de_senha_redefine_acesso(client, create_user):
+def test_recuperacao_de_senha_redefine_acesso(client, create_user, csrf_token, monkeypatch):
+    monkeypatch.setenv("SHOW_RESET_LINK", "true")
+
     create_user(
         nome="Usuário Recuperação",
         email="recuperacao@teste.com",
@@ -72,6 +76,7 @@ def test_recuperacao_de_senha_redefine_acesso(client, create_user):
         "/recuperar-senha",
         data={
             "email": "recuperacao@teste.com",
+            "csrf_token": csrf_token("/recuperar-senha"),
         },
         follow_redirects=True,
     )
@@ -89,6 +94,7 @@ def test_recuperacao_de_senha_redefine_acesso(client, create_user):
         data={
             "senha": "NovaSenha@123",
             "confirmar_senha": "NovaSenha@123",
+            "csrf_token": csrf_token(f"/redefinir-senha/{token}"),
         },
         follow_redirects=False,
     )
@@ -101,6 +107,7 @@ def test_recuperacao_de_senha_redefine_acesso(client, create_user):
         data={
             "email": "recuperacao@teste.com",
             "senha": "NovaSenha@123",
+            "csrf_token": csrf_token("/login"),
         },
         follow_redirects=False,
     )

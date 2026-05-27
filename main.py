@@ -6,47 +6,29 @@ from flask import (
     redirect,
     session,
     flash,
-    request
+    request,
+    abort
 )
 
 from database import (
-    criar_tabela_usuarios,
-    criar_tabela_recuperacao_senha,
-    criar_tabela_chamados,
-    criar_tabela_historico,
-    criar_tabela_comentarios,
-    adicionar_coluna_data_limite,
-    criar_tabela_anexos,
-    adicionar_coluna_usuario_historico,
-    adicionar_coluna_responsavel_chamado
+    contar_usuarios_total,
+    inicializar_banco
 )
 
 from routes.auth import auth
 from routes.chamados import chamados
 from routes.admin import admin
+from utils.security import csrf_token, validar_csrf_token
 
 
 def auto_seed_demo():
     if os.environ.get("AUTO_SEED_DEMO", "").lower() != "true":
         return
 
-    from database import conectar
     from seed_database import criar_banco_demo
 
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    SELECT COUNT(*)
-    FROM usuarios
-    """)
-
-    total_usuarios = cursor.fetchone()[0]
-
-    conexao.close()
-
-    if total_usuarios == 0:
-        criar_banco_demo()
+    if contar_usuarios_total() == 0:
+        criar_banco_demo(recriar=False)
 
 
 app = Flask(__name__)
@@ -57,6 +39,12 @@ app.secret_key = os.environ.get(
 )
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get(
+    "SESSION_COOKIE_SECURE",
+    "false"
+).lower() == "true"
 
 os.makedirs(
     "uploads",
@@ -68,17 +56,29 @@ app.register_blueprint(chamados)
 app.register_blueprint(admin)
 
 
-# Criar tabelas
-criar_tabela_usuarios()
-criar_tabela_recuperacao_senha()
-criar_tabela_chamados()
-criar_tabela_historico()
-criar_tabela_comentarios()
-adicionar_coluna_data_limite()
-criar_tabela_anexos()
-adicionar_coluna_usuario_historico()
-adicionar_coluna_responsavel_chamado()
+inicializar_banco()
 auto_seed_demo()
+
+
+@app.context_processor
+def injetar_csrf_token():
+    return {
+        "csrf_token": csrf_token
+    }
+
+
+@app.before_request
+def proteger_requisicoes_post():
+    if request.method not in ["POST", "PUT", "PATCH", "DELETE"]:
+        return
+
+    if app.config.get("TESTING") and os.environ.get("DISABLE_CSRF_TESTS") == "true":
+        return
+
+    token_enviado = request.form.get("csrf_token") or request.headers.get("X-CSRFToken")
+
+    if not validar_csrf_token(token_enviado):
+        abort(400)
 
 @app.route("/")
 def home():

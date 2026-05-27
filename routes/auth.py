@@ -1,6 +1,7 @@
 import os
 import secrets
 from datetime import datetime, timedelta
+from time import time
 
 from flask import (
     Blueprint,
@@ -27,6 +28,41 @@ auth = Blueprint(
 )
 
 ph = PasswordHasher()
+tentativas_login = {}
+
+
+def login_bloqueado(chave):
+    dados = tentativas_login.get(chave)
+
+    if not dados:
+        return False
+
+    tentativas, bloqueado_ate = dados
+
+    return tentativas >= 5 and time() < bloqueado_ate
+
+
+def registrar_falha_login(chave):
+    tentativas, bloqueado_ate = tentativas_login.get(
+        chave,
+        (0, 0)
+    )
+
+    if time() > bloqueado_ate:
+        tentativas = 0
+
+    tentativas += 1
+    bloqueado_ate = time() + 300 if tentativas >= 5 else bloqueado_ate
+    tentativas_login[chave] = (tentativas, bloqueado_ate)
+
+
+def limpar_falhas_login(chave):
+    tentativas_login.pop(
+        chave,
+        None
+    )
+
+
 # =========================
 # CADASTRO
 # =========================
@@ -55,8 +91,18 @@ def login():
 
     if request.method == "POST":
 
-        email = request.form["email"]
+        email = request.form["email"].strip().lower()
         senha = request.form["senha"]
+        chave_login = f"{request.remote_addr}:{email}"
+
+        if login_bloqueado(chave_login):
+
+            flash(
+                "Muitas tentativas de login. Aguarde alguns minutos e tente novamente.",
+                "warning"
+            )
+
+            return redirect("/login")
 
         usuario = buscar_usuario(email)
 
@@ -72,10 +118,16 @@ def login():
                 session["usuario_id"] = usuario["id"]
                 session["usuario_nome"] = usuario["nome"]
                 session["usuario_tipo"] = usuario["tipo"]
+                session["organizacao_id"] = usuario["organizacao_id"]
+                session["organizacao_nome"] = usuario["organizacao_nome"]
+
+                limpar_falhas_login(chave_login)
 
                 return redirect("/dashboard")
 
             except:
+
+                registrar_falha_login(chave_login)
 
                 flash(
                     "Email ou senha incorretos.",
@@ -84,8 +136,10 @@ def login():
 
                 return redirect("/login")
 
+        registrar_falha_login(chave_login)
+
         flash(
-            "Usuário não encontrado.",
+            "Email ou senha incorretos.",
             "danger"
         )
 
@@ -106,7 +160,7 @@ def recuperar_senha():
 
     if request.method == "POST":
 
-        email = request.form["email"].strip()
+        email = request.form["email"].strip().lower()
 
         usuario = buscar_usuario(email)
 
@@ -126,7 +180,7 @@ def recuperar_senha():
 
             link_recuperacao = request.url_root.rstrip("/") + f"/redefinir-senha/{token}"
 
-            if os.environ.get("SHOW_RESET_LINK", "true").lower() == "true":
+            if os.environ.get("SHOW_RESET_LINK", "false").lower() == "true":
 
                 flash(
                     "Link de recuperação gerado para ambiente de demonstração.",

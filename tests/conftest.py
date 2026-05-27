@@ -11,6 +11,7 @@ MODULES_TO_RELOAD = [
     "routes.admin",
     "routes.auth",
     "routes.chamados",
+    "utils.security",
     "utils.decorators",
 ]
 
@@ -40,6 +41,17 @@ def db_module(app):
 
 
 @pytest.fixture()
+def csrf_token(client):
+    def _csrf_token(caminho="/login"):
+        client.get(caminho)
+
+        with client.session_transaction() as sessao:
+            return sessao["_csrf_token"]
+
+    return _csrf_token
+
+
+@pytest.fixture()
 def create_user(db_module):
     ph = PasswordHasher()
 
@@ -48,12 +60,14 @@ def create_user(db_module):
         email="usuario@teste.com",
         senha="Senha@123",
         tipo="cliente",
+        organizacao_id=None,
     ):
         db_module.criar_usuario(
             nome,
             email,
             ph.hash(senha),
             tipo,
+            organizacao_id,
         )
 
         return db_module.buscar_usuario(email)
@@ -62,7 +76,7 @@ def create_user(db_module):
 
 
 @pytest.fixture()
-def login(client, create_user):
+def login(client, create_user, csrf_token):
     def _login(
         email="usuario@teste.com",
         senha="Senha@123",
@@ -81,6 +95,7 @@ def login(client, create_user):
             data={
                 "email": email,
                 "senha": senha,
+                "csrf_token": csrf_token("/login"),
             },
             follow_redirects=False,
         )

@@ -1,134 +1,322 @@
 import os
-import sqlite3
+from datetime import datetime
+from pathlib import Path
+
+from sqlalchemy import create_engine, inspect, text
+DEFAULT_ORG_NAME = "Empresa Demo"
+DEFAULT_ORG_SLUG = "empresa-demo"
+
+_engine = None
+_engine_url = None
 
 
-# =========================
-# CONEXÃO
-# =========================
-def conectar():
+def obter_database_url():
+    database_url = os.environ.get("DATABASE_URL")
 
-    conexao = sqlite3.connect(
+    if database_url:
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace(
+                "postgres://",
+                "postgresql+psycopg://",
+                1
+            )
+
+        if database_url.startswith("postgresql://"):
+            database_url = database_url.replace(
+                "postgresql://",
+                "postgresql+psycopg://",
+                1
+            )
+
+        return database_url
+
+    database_path = Path(
         os.environ.get(
             "DATABASE_PATH",
             "chamados.db"
-        ),
-        timeout=10
+        )
     )
 
-    conexao.row_factory = sqlite3.Row
-
-    return conexao
+    return f"sqlite:///{database_path}"
 
 
-def linha_para_dict(linha):
+def obter_engine():
+    global _engine
+    global _engine_url
 
-    if linha is None:
+    database_url = obter_database_url()
+
+    if _engine is None or _engine_url != database_url:
+        connect_args = {}
+
+        if database_url.startswith("sqlite"):
+            connect_args = {
+                "check_same_thread": False
+            }
+
+        _engine = create_engine(
+            database_url,
+            connect_args=connect_args,
+            future=True,
+            pool_pre_ping=True
+        )
+        _engine_url = database_url
+
+    return _engine
+
+
+def banco_postgres():
+    return obter_engine().dialect.name == "postgresql"
+
+
+def id_sql():
+    if banco_postgres():
+        return "SERIAL PRIMARY KEY"
+
+    return "INTEGER PRIMARY KEY AUTOINCREMENT"
+
+
+def executar(sql, parametros=None):
+    with obter_engine().begin() as conexao:
+        return conexao.execute(
+            text(sql),
+            parametros or {}
+        )
+
+
+def consultar_um(sql, parametros=None):
+    with obter_engine().connect() as conexao:
+        resultado = conexao.execute(
+            text(sql),
+            parametros or {}
+        ).mappings().first()
+
+    if resultado is None:
         return None
 
-    return dict(linha)
+    return dict(resultado)
 
 
-def linhas_para_dict(linhas):
+def consultar_lista(sql, parametros=None):
+    with obter_engine().connect() as conexao:
+        resultado = conexao.execute(
+            text(sql),
+            parametros or {}
+        ).mappings().all()
 
     return [
         dict(linha)
-        for linha in linhas
+        for linha in resultado
     ]
 
 
-# =========================
-# TABELA USUÁRIOS
-# =========================
-def criar_tabela_usuarios():
+def consultar_scalar(sql, parametros=None):
+    with obter_engine().connect() as conexao:
+        return conexao.execute(
+            text(sql),
+            parametros or {}
+        ).scalar()
 
-    conexao = conectar()
 
-    cursor = conexao.cursor()
+def inserir_e_retornar_id(sql, parametros=None):
+    with obter_engine().begin() as conexao:
+        if banco_postgres():
+            resultado = conexao.execute(
+                text(f"{sql} RETURNING id"),
+                parametros or {}
+            )
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS usuarios (
+            return resultado.scalar_one()
 
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resultado = conexao.execute(
+            text(sql),
+            parametros or {}
+        )
 
-        nome TEXT NOT NULL,
+        return resultado.lastrowid
 
-        email TEXT NOT NULL UNIQUE,
 
-        senha TEXT NOT NULL,
+def tabela_tem_coluna(tabela, coluna):
+    inspetor = inspect(obter_engine())
 
-        tipo TEXT NOT NULL
+    if not inspetor.has_table(tabela):
+        return False
+
+    return coluna in [
+        item["name"]
+        for item in inspetor.get_columns(tabela)
+    ]
+
+
+def adicionar_coluna(tabela, coluna, definicao):
+    if tabela_tem_coluna(tabela, coluna):
+        return
+
+    executar(
+        f"ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}"
     )
-    """)
-
-    conexao.commit()
-
-    conexao.close()
 
 
-# =========================
-# TABELA RECUPERAÇÃO DE SENHA
-# =========================
-def criar_tabela_recuperacao_senha():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS recuperacao_senha (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        usuario_id INTEGER NOT NULL,
-
-        token TEXT NOT NULL UNIQUE,
-
-        expira_em TEXT NOT NULL,
-
-        usado INTEGER NOT NULL DEFAULT 0,
-
+def criar_tabela_organizacoes():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS organizacoes (
+        id {id_sql()},
+        nome TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        ativo INTEGER NOT NULL DEFAULT 1,
         data_criacao TEXT NOT NULL
     )
     """)
 
-    conexao.commit()
-    conexao.close()
+
+def buscar_organizacao_por_slug(slug):
+    return consultar_um("""
+    SELECT *
+    FROM organizacoes
+    WHERE slug = :slug
+    """, {
+        "slug": slug
+    })
 
 
-# =========================
-# CRIAR USUÁRIO
-# =========================
-def criar_usuario(nome, email, senha, tipo):
+def criar_organizacao(nome, slug):
+    existente = buscar_organizacao_por_slug(slug)
 
-    conexao = conectar()
+    if existente:
+        return existente["id"]
 
-    cursor = conexao.cursor()
+    return inserir_e_retornar_id("""
+    INSERT INTO organizacoes (
+        nome,
+        slug,
+        ativo,
+        data_criacao
+    )
+    VALUES (
+        :nome,
+        :slug,
+        1,
+        :data_criacao
+    )
+    """, {
+        "nome": nome,
+        "slug": slug,
+        "data_criacao": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
 
-    cursor.execute("""
-    INSERT INTO usuarios (nome, email, senha, tipo)
-    VALUES (?, ?, ?, ?)
-    """, (nome, email, senha, tipo))
 
-    conexao.commit()
+def obter_organizacao_padrao_id():
+    criar_tabela_organizacoes()
 
-    conexao.close()
+    return criar_organizacao(
+        DEFAULT_ORG_NAME,
+        DEFAULT_ORG_SLUG
+    )
+
+
+def criar_tabela_usuarios():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id {id_sql()},
+        organizacao_id INTEGER,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        senha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        ativo INTEGER NOT NULL DEFAULT 1,
+        data_criacao TEXT
+    )
+    """)
+
+
+def adicionar_coluna_organizacao_usuarios():
+    adicionar_coluna(
+        "usuarios",
+        "organizacao_id",
+        "INTEGER"
+    )
+    adicionar_coluna(
+        "usuarios",
+        "ativo",
+        "INTEGER NOT NULL DEFAULT 1"
+    )
+    adicionar_coluna(
+        "usuarios",
+        "data_criacao",
+        "TEXT"
+    )
+
+    organizacao_id = obter_organizacao_padrao_id()
+
+    executar("""
+    UPDATE usuarios
+    SET organizacao_id = :organizacao_id
+    WHERE organizacao_id IS NULL
+    """, {
+        "organizacao_id": organizacao_id
+    })
+
+
+def criar_tabela_recuperacao_senha():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS recuperacao_senha (
+        id {id_sql()},
+        usuario_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        expira_em TEXT NOT NULL,
+        usado INTEGER NOT NULL DEFAULT 0,
+        data_criacao TEXT NOT NULL
+    )
+    """)
+
+
+def criar_usuario(
+    nome,
+    email,
+    senha,
+    tipo,
+    organizacao_id=None
+):
+    organizacao_id = organizacao_id or obter_organizacao_padrao_id()
+
+    executar("""
+    INSERT INTO usuarios (
+        organizacao_id,
+        nome,
+        email,
+        senha,
+        tipo,
+        ativo,
+        data_criacao
+    )
+    VALUES (
+        :organizacao_id,
+        :nome,
+        :email,
+        :senha,
+        :tipo,
+        1,
+        :data_criacao
+    )
+    """, {
+        "organizacao_id": organizacao_id,
+        "nome": nome,
+        "email": email,
+        "senha": senha,
+        "tipo": tipo,
+        "data_criacao": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
 
 
 def atualizar_senha_usuario(usuario_id, senha_hash):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar("""
     UPDATE usuarios
-    SET senha = ?
-    WHERE id = ?
-    """, (
-        senha_hash,
-        usuario_id
-    ))
-
-    conexao.commit()
-    conexao.close()
+    SET senha = :senha
+    WHERE id = :usuario_id
+    """, {
+        "senha": senha_hash,
+        "usuario_id": usuario_id
+    })
 
 
 def criar_token_recuperacao(
@@ -137,35 +325,29 @@ def criar_token_recuperacao(
     expira_em,
     data_criacao
 ):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar("""
     INSERT INTO recuperacao_senha (
         usuario_id,
         token,
         expira_em,
         data_criacao
     )
-    VALUES (?, ?, ?, ?)
-    """, (
-        usuario_id,
-        token,
-        expira_em,
-        data_criacao
-    ))
-
-    conexao.commit()
-    conexao.close()
+    VALUES (
+        :usuario_id,
+        :token,
+        :expira_em,
+        :data_criacao
+    )
+    """, {
+        "usuario_id": usuario_id,
+        "token": token,
+        "expira_em": expira_em,
+        "data_criacao": data_criacao
+    })
 
 
 def buscar_token_recuperacao(token):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_um("""
     SELECT
         recuperacao_senha.id AS id,
         recuperacao_senha.usuario_id AS usuario_id,
@@ -176,103 +358,102 @@ def buscar_token_recuperacao(token):
     FROM recuperacao_senha
     INNER JOIN usuarios
         ON recuperacao_senha.usuario_id = usuarios.id
-    WHERE recuperacao_senha.token = ?
-    """, (token,))
-
-    recuperacao = cursor.fetchone()
-
-    conexao.close()
-
-    return linha_para_dict(recuperacao)
+    WHERE recuperacao_senha.token = :token
+    """, {
+        "token": token
+    })
 
 
 def marcar_token_recuperacao_usado(token):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar("""
     UPDATE recuperacao_senha
     SET usado = 1
-    WHERE token = ?
-    """, (token,))
+    WHERE token = :token
+    """, {
+        "token": token
+    })
 
-    conexao.commit()
-    conexao.close()
 
-
-# =========================
-# BUSCAR USUÁRIO
-# =========================
 def buscar_usuario(email):
+    return consultar_um("""
+    SELECT
+        usuarios.id AS id,
+        usuarios.organizacao_id AS organizacao_id,
+        organizacoes.nome AS organizacao_nome,
+        usuarios.nome AS nome,
+        usuarios.email AS email,
+        usuarios.senha AS senha,
+        usuarios.tipo AS tipo,
+        usuarios.ativo AS ativo
+    FROM usuarios
+    INNER JOIN organizacoes
+        ON usuarios.organizacao_id = organizacoes.id
+    WHERE usuarios.email = :email
+    AND usuarios.ativo = 1
+    """, {
+        "email": email
+    })
 
-    conexao = conectar()
 
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    SELECT * FROM usuarios
-    WHERE email = ?
-    """, (email,))
-
-    usuario = cursor.fetchone()
-
-    conexao.close()
-
-    return linha_para_dict(usuario)
+def contar_usuarios_total():
+    return consultar_scalar("""
+    SELECT COUNT(*)
+    FROM usuarios
+    """) or 0
 
 
-# =========================
-# TABELA CHAMADOS
-# =========================
 def criar_tabela_chamados():
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar(f"""
     CREATE TABLE IF NOT EXISTS chamados (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+        id {id_sql()},
+        organizacao_id INTEGER,
         titulo TEXT NOT NULL,
-
         descricao TEXT NOT NULL,
-
         status TEXT NOT NULL,
-
         prioridade TEXT NOT NULL,
-
         usuario_id INTEGER NOT NULL,
-
         resposta TEXT,
-
-        data_criacao TEXT NOT NULL
+        data_criacao TEXT NOT NULL,
+        data_limite TEXT,
+        responsavel_id INTEGER
     )
     """)
 
-    conexao.commit()
 
-    conexao.close()
+def adicionar_coluna_organizacao_chamados():
+    adicionar_coluna(
+        "chamados",
+        "organizacao_id",
+        "INTEGER"
+    )
 
-# =========================
-# CRIAR CHAMADO
-# =========================
+    executar("""
+    UPDATE chamados
+    SET organizacao_id = (
+        SELECT usuarios.organizacao_id
+        FROM usuarios
+        WHERE usuarios.id = chamados.usuario_id
+    )
+    WHERE organizacao_id IS NULL
+    """)
+
+
 def criar_chamado(
     titulo,
     descricao,
     prioridade,
     usuario_id,
     data_criacao,
-    data_limite
+    data_limite,
+    organizacao_id=None
 ):
+    if organizacao_id is None:
+        usuario = buscar_usuario_por_id(usuario_id)
+        organizacao_id = usuario["organizacao_id"]
 
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return inserir_e_retornar_id("""
     INSERT INTO chamados (
+        organizacao_id,
         titulo,
         descricao,
         status,
@@ -282,247 +463,177 @@ def criar_chamado(
         data_criacao,
         data_limite
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        titulo,
-        descricao,
-        "Aberto",
-        prioridade,
-        usuario_id,
-        "",
-        data_criacao,
-        data_limite
-    ))
+    VALUES (
+        :organizacao_id,
+        :titulo,
+        :descricao,
+        'Aberto',
+        :prioridade,
+        :usuario_id,
+        '',
+        :data_criacao,
+        :data_limite
+    )
+    """, {
+        "organizacao_id": organizacao_id,
+        "titulo": titulo,
+        "descricao": descricao,
+        "prioridade": prioridade,
+        "usuario_id": usuario_id,
+        "data_criacao": data_criacao,
+        "data_limite": data_limite
+    })
 
-    conexao.commit()
 
-    id_chamado = cursor.lastrowid
+def buscar_usuario_por_id(usuario_id):
+    return consultar_um("""
+    SELECT *
+    FROM usuarios
+    WHERE id = :usuario_id
+    """, {
+        "usuario_id": usuario_id
+    })
 
-    conexao.close()
 
-    return id_chamado
-
-
-# =========================
-# LISTAR CHAMADOS
-# =========================
 def listar_chamados_usuario(usuario_id):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    SELECT * FROM chamados
-    WHERE usuario_id = ?
+    return consultar_lista("""
+    SELECT *
+    FROM chamados
+    WHERE usuario_id = :usuario_id
     ORDER BY id DESC
-    """, (usuario_id,))
+    """, {
+        "usuario_id": usuario_id
+    })
 
-    chamados = cursor.fetchall()
 
-    conexao.close()
+def buscar_chamado(id_chamado, organizacao_id=None):
+    parametros = {
+        "id_chamado": id_chamado
+    }
 
-    return linhas_para_dict(chamados)
+    filtro_org = ""
 
-# =========================
-# BUSCAR CHAMADO
-# =========================
-def buscar_chamado(id_chamado):
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    conexao = conectar()
+    return consultar_um(f"""
+    SELECT *
+    FROM chamados
+    WHERE id = :id_chamado
+    {filtro_org}
+    """, parametros)
 
-    cursor = conexao.cursor()
 
-    cursor.execute("""
-    SELECT * FROM chamados
-    WHERE id = ?
-    """, (id_chamado,))
-
-    chamado = cursor.fetchone()
-
-    conexao.close()
-
-    return linha_para_dict(chamado)
-
-# =========================
-# ATUALIZAR CHAMADO
-# =========================
 def atualizar_chamado(
     id_chamado,
     resposta,
-    status
+    status,
+    organizacao_id=None
 ):
+    parametros = {
+        "id_chamado": id_chamado,
+        "resposta": resposta,
+        "status": status
+    }
 
-    conexao = conectar()
+    filtro_org = ""
 
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    executar(f"""
     UPDATE chamados
+    SET resposta = :resposta,
+        status = :status
+    WHERE id = :id_chamado
+    {filtro_org}
+    """, parametros)
 
-    SET
-        resposta = ?,
-        status = ?
 
-    WHERE id = ?
-    """, (
-        resposta,
-        status,
-        id_chamado
-    ))
-
-    conexao.commit()
-
-    conexao.close()
-
-# =========================
-# ESTATÍSTICAS
-# =========================
 def contar_chamados_usuario(usuario_id):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_scalar("""
     SELECT COUNT(*)
     FROM chamados
-    WHERE usuario_id = ?
-    """, (usuario_id,))
-
-    total = cursor.fetchone()[0]
-
-    conexao.close()
-
-    return total
+    WHERE usuario_id = :usuario_id
+    """, {
+        "usuario_id": usuario_id
+    }) or 0
 
 
 def contar_chamados_status(
     usuario_id,
     status
 ):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_scalar("""
     SELECT COUNT(*)
     FROM chamados
-    WHERE usuario_id = ?
-    AND status = ?
-    """, (
-        usuario_id,
-        status
-    ))
+    WHERE usuario_id = :usuario_id
+    AND status = :status
+    """, {
+        "usuario_id": usuario_id,
+        "status": status
+    }) or 0
 
-    total = cursor.fetchone()[0]
 
-    conexao.close()
-
-    return total
-
-# =========================
-# BUSCAR CHAMADOS
-# =========================
 def buscar_chamados_usuario(
     usuario_id,
     pesquisa
 ):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    SELECT * FROM chamados
-    WHERE usuario_id = ?
-    AND titulo LIKE ?
+    return consultar_lista("""
+    SELECT *
+    FROM chamados
+    WHERE usuario_id = :usuario_id
+    AND titulo LIKE :pesquisa
     ORDER BY id DESC
-    """, (
-        usuario_id,
-        f"%{pesquisa}%"
-    ))
+    """, {
+        "usuario_id": usuario_id,
+        "pesquisa": f"%{pesquisa}%"
+    })
 
-    chamados = cursor.fetchall()
 
-    conexao.close()
-
-    return linhas_para_dict(chamados)
-
-# =========================
-# TABELA HISTÓRICO
-# =========================
 def criar_tabela_historico():
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar(f"""
     CREATE TABLE IF NOT EXISTS historico_chamados (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+        id {id_sql()},
         chamado_id INTEGER NOT NULL,
-
+        usuario_id INTEGER,
         mensagem TEXT NOT NULL,
-
         data TEXT NOT NULL
-
     )
     """)
 
-    conexao.commit()
 
-    conexao.close()
-
-
-# =========================
-# REGISTRAR HISTÓRICO
-# =========================
 def registrar_historico(
     chamado_id,
     usuario_id,
     mensagem,
     data
 ):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar("""
     INSERT INTO historico_chamados (
         chamado_id,
         usuario_id,
         mensagem,
         data
     )
-    VALUES (?, ?, ?, ?)
-    """, (
-        chamado_id,
-        usuario_id,
-        mensagem,
-        data
-    ))
+    VALUES (
+        :chamado_id,
+        :usuario_id,
+        :mensagem,
+        :data
+    )
+    """, {
+        "chamado_id": chamado_id,
+        "usuario_id": usuario_id,
+        "mensagem": mensagem,
+        "data": data
+    })
 
-    conexao.commit()
 
-    conexao.close()
-
-# =========================
-# LISTAR HISTÓRICO
-# =========================
-def listar_historico(
-    chamado_id
-):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+def listar_historico(chamado_id):
+    return consultar_lista("""
     SELECT
         historico_chamados.id AS id,
         historico_chamados.mensagem AS mensagem,
@@ -532,90 +643,54 @@ def listar_historico(
     FROM historico_chamados
     LEFT JOIN usuarios
         ON historico_chamados.usuario_id = usuarios.id
-    WHERE historico_chamados.chamado_id = ?
+    WHERE historico_chamados.chamado_id = :chamado_id
     ORDER BY historico_chamados.id DESC
-    """, (chamado_id,))
+    """, {
+        "chamado_id": chamado_id
+    })
 
-    historico = cursor.fetchall()
 
-    conexao.close()
-
-    return linhas_para_dict(historico)
-
-# =========================
-# TABELA COMENTÁRIOS
-# =========================
 def criar_tabela_comentarios():
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar(f"""
     CREATE TABLE IF NOT EXISTS comentarios_chamados (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+        id {id_sql()},
         chamado_id INTEGER NOT NULL,
-
         usuario_id INTEGER NOT NULL,
-
         mensagem TEXT NOT NULL,
-
         data TEXT NOT NULL
-
     )
     """)
 
-    conexao.commit()
 
-    conexao.close()
-
-
-# =========================
-# ADICIONAR COMENTÁRIO
-# =========================
 def adicionar_comentario(
     chamado_id,
     usuario_id,
     mensagem,
     data
 ):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar("""
     INSERT INTO comentarios_chamados (
         chamado_id,
         usuario_id,
         mensagem,
         data
     )
-    VALUES (?, ?, ?, ?)
-    """, (
-        chamado_id,
-        usuario_id,
-        mensagem,
-        data
-    ))
+    VALUES (
+        :chamado_id,
+        :usuario_id,
+        :mensagem,
+        :data
+    )
+    """, {
+        "chamado_id": chamado_id,
+        "usuario_id": usuario_id,
+        "mensagem": mensagem,
+        "data": data
+    })
 
-    conexao.commit()
 
-    conexao.close()
-
-
-# =========================
-# LISTAR COMENTÁRIOS
-# =========================
 def listar_comentarios(chamado_id):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_lista("""
     SELECT
         comentarios_chamados.id AS id,
         usuarios.nome AS usuario_nome,
@@ -625,63 +700,48 @@ def listar_comentarios(chamado_id):
     FROM comentarios_chamados
     INNER JOIN usuarios
         ON comentarios_chamados.usuario_id = usuarios.id
-    WHERE comentarios_chamados.chamado_id = ?
+    WHERE comentarios_chamados.chamado_id = :chamado_id
     ORDER BY comentarios_chamados.id ASC
-    """, (chamado_id,))
+    """, {
+        "chamado_id": chamado_id
+    })
 
-    comentarios = cursor.fetchall()
 
-    conexao.close()
+def contar_todos_chamados(organizacao_id=None):
+    parametros = {}
+    filtro_org = ""
 
-    return linhas_para_dict(comentarios)
+    if organizacao_id is not None:
+        filtro_org = "WHERE organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-# =========================
-# ESTATÍSTICAS ADMIN
-# =========================
-def contar_todos_chamados():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_scalar(f"""
     SELECT COUNT(*)
     FROM chamados
-    """)
-
-    total = cursor.fetchone()[0]
-
-    conexao.close()
-
-    return total
+    {filtro_org}
+    """, parametros) or 0
 
 
-def contar_todos_chamados_status(status):
+def contar_todos_chamados_status(status, organizacao_id=None):
+    parametros = {
+        "status": status
+    }
+    filtro_org = ""
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    return consultar_scalar(f"""
     SELECT COUNT(*)
     FROM chamados
-    WHERE status = ?
-    """, (status,))
-
-    total = cursor.fetchone()[0]
-
-    conexao.close()
-
-    return total
+    WHERE status = :status
+    {filtro_org}
+    """, parametros) or 0
 
 
-# =========================
-# CHAMADOS RECENTES
-# =========================
 def listar_chamados_recentes_usuario(usuario_id):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_lista("""
     SELECT
         id,
         titulo,
@@ -689,26 +749,23 @@ def listar_chamados_recentes_usuario(usuario_id):
         prioridade,
         data_criacao
     FROM chamados
-    WHERE usuario_id = ?
+    WHERE usuario_id = :usuario_id
     ORDER BY id DESC
     LIMIT 5
-    """, (usuario_id,))
+    """, {
+        "usuario_id": usuario_id
+    })
 
-    chamados = cursor.fetchall()
 
-    conexao.close()
+def listar_chamados_recentes_admin(organizacao_id=None):
+    parametros = {}
+    filtro_org = ""
 
-    return linhas_para_dict(chamados)
+    if organizacao_id is not None:
+        filtro_org = "WHERE chamados.organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-# =========================
-# LISTAR CHAMADOS ADMIN
-# =========================
-def listar_chamados_recentes_admin():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_lista(f"""
     SELECT
         chamados.id AS id,
         chamados.titulo AS titulo,
@@ -719,29 +776,45 @@ def listar_chamados_recentes_admin():
     FROM chamados
     INNER JOIN usuarios
         ON chamados.usuario_id = usuarios.id
+    {filtro_org}
     ORDER BY chamados.id DESC
     LIMIT 5
-    """)
+    """, parametros)
 
-    chamados = cursor.fetchall()
 
-    conexao.close()
-
-    return linhas_para_dict(chamados)
-
-# =========================
-# LISTAR CHAMADOS ADMIN
-# =========================
 def listar_chamados_admin(
     status="",
     prioridade="",
-    responsavel_id=""
+    responsavel_id="",
+    organizacao_id=None
 ):
+    parametros = {
+        "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    filtros = [
+        "1 = 1"
+    ]
 
-    query = """
+    if organizacao_id is not None:
+        filtros.append("chamados.organizacao_id = :organizacao_id")
+        parametros["organizacao_id"] = organizacao_id
+
+    if status:
+        filtros.append("chamados.status = :status")
+        parametros["status"] = status
+
+    if prioridade:
+        filtros.append("chamados.prioridade = :prioridade")
+        parametros["prioridade"] = prioridade
+
+    if responsavel_id == "sem_responsavel":
+        filtros.append("chamados.responsavel_id IS NULL")
+    elif responsavel_id:
+        filtros.append("chamados.responsavel_id = :responsavel_id")
+        parametros["responsavel_id"] = responsavel_id
+
+    return consultar_lista(f"""
     SELECT
         chamados.id AS id,
         chamados.titulo AS titulo,
@@ -752,7 +825,7 @@ def listar_chamados_admin(
         chamados.data_limite AS data_limite,
         CASE
             WHEN chamados.data_limite IS NOT NULL
-            AND datetime(chamados.data_limite) < datetime('now', 'localtime')
+            AND chamados.data_limite < :agora
             AND chamados.status NOT IN ('Resolvido', 'Encerrado')
             THEN 1
             ELSE 0
@@ -763,290 +836,151 @@ def listar_chamados_admin(
         ON chamados.usuario_id = usuarios.id
     LEFT JOIN usuarios AS responsavel
         ON chamados.responsavel_id = responsavel.id
-    WHERE 1 = 1
-    """
-
-    parametros = []
-
-    if status:
-        query += " AND chamados.status = ?"
-        parametros.append(status)
-
-    if prioridade:
-        query += " AND chamados.prioridade = ?"
-        parametros.append(prioridade)
-
-    if responsavel_id == "sem_responsavel":
-
-        query += " AND chamados.responsavel_id IS NULL"
-
-    elif responsavel_id:
-
-        query += " AND chamados.responsavel_id = ?"
-
-        parametros.append(responsavel_id)
-
-    query += " ORDER BY chamados.id DESC"
-
-    cursor.execute(query, parametros)
-
-    chamados = cursor.fetchall()
-
-    conexao.close()
-
-    return linhas_para_dict(chamados)
+    WHERE {" AND ".join(filtros)}
+    ORDER BY chamados.id DESC
+    """, parametros)
 
 
-# =========================
-# MIGRAÇÃO - DATA LIMITE
-# =========================
 def adicionar_coluna_data_limite():
+    adicionar_coluna(
+        "chamados",
+        "data_limite",
+        "TEXT"
+    )
 
-    conexao = conectar()
-    cursor = conexao.cursor()
 
-    cursor.execute("""
-    PRAGMA table_info(chamados)
-    """)
-
-    colunas = cursor.fetchall()
-
-    nomes_colunas = [
-        coluna[1]
-        for coluna in colunas
-    ]
-
-    if "data_limite" not in nomes_colunas:
-
-        cursor.execute("""
-        ALTER TABLE chamados
-        ADD COLUMN data_limite TEXT
-        """)
-
-        conexao.commit()
-
-    conexao.close()
-
-# =========================
-# TABELA ANEXOS
-# =========================
 def criar_tabela_anexos():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar(f"""
     CREATE TABLE IF NOT EXISTS anexos_chamados (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+        id {id_sql()},
         chamado_id INTEGER NOT NULL,
-
         nome_arquivo TEXT NOT NULL,
-
         caminho_arquivo TEXT NOT NULL,
-
         data_envio TEXT NOT NULL
-
     )
     """)
 
-    conexao.commit()
-    conexao.close()
 
-
-# =========================
-# SALVAR ANEXO
-# =========================
 def salvar_anexo(
     chamado_id,
     nome_arquivo,
     caminho_arquivo,
     data_envio
 ):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    executar("""
     INSERT INTO anexos_chamados (
         chamado_id,
         nome_arquivo,
         caminho_arquivo,
         data_envio
     )
-    VALUES (?, ?, ?, ?)
-    """, (
-        chamado_id,
-        nome_arquivo,
-        caminho_arquivo,
-        data_envio
-    ))
+    VALUES (
+        :chamado_id,
+        :nome_arquivo,
+        :caminho_arquivo,
+        :data_envio
+    )
+    """, {
+        "chamado_id": chamado_id,
+        "nome_arquivo": nome_arquivo,
+        "caminho_arquivo": caminho_arquivo,
+        "data_envio": data_envio
+    })
 
-    conexao.commit()
-    conexao.close()
 
-
-# =========================
-# LISTAR ANEXOS
-# =========================
 def listar_anexos(chamado_id):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_lista("""
     SELECT *
     FROM anexos_chamados
-    WHERE chamado_id = ?
+    WHERE chamado_id = :chamado_id
     ORDER BY id DESC
-    """, (chamado_id,))
+    """, {
+        "chamado_id": chamado_id
+    })
 
-    anexos = cursor.fetchall()
 
-    conexao.close()
-
-    return linhas_para_dict(anexos)
-# =========================
-# BUSCAR ANEXO
-# =========================
 def buscar_anexo(id_anexo):
-
-    conexao = conectar()
-
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_um("""
     SELECT *
     FROM anexos_chamados
-    WHERE id = ?
-    """, (id_anexo,))
+    WHERE id = :id_anexo
+    """, {
+        "id_anexo": id_anexo
+    })
 
-    anexo = cursor.fetchone()
 
-    conexao.close()
-
-    return linha_para_dict(anexo)
-
-# =========================
-# MIGRAÇÃO - USUÁRIO NO HISTÓRICO
-# =========================
 def adicionar_coluna_usuario_historico():
+    adicionar_coluna(
+        "historico_chamados",
+        "usuario_id",
+        "INTEGER"
+    )
 
-    conexao = conectar()
-    cursor = conexao.cursor()
 
-    cursor.execute("""
-    PRAGMA table_info(historico_chamados)
-    """)
+def listar_usuarios(organizacao_id=None):
+    parametros = {}
+    filtro_org = ""
 
-    colunas = cursor.fetchall()
+    if organizacao_id is not None:
+        filtro_org = "WHERE usuarios.organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    nomes_colunas = [
-        coluna[1]
-        for coluna in colunas
-    ]
-
-    if "usuario_id" not in nomes_colunas:
-
-        cursor.execute("""
-        ALTER TABLE historico_chamados
-        ADD COLUMN usuario_id INTEGER
-        """)
-
-        conexao.commit()
-
-    conexao.close()
-
-# =========================
-# LISTAR USUÁRIOS
-# =========================
-def listar_usuarios():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    return consultar_lista(f"""
     SELECT
-        id,
-        nome,
-        email,
-        tipo
+        usuarios.id AS id,
+        usuarios.nome AS nome,
+        usuarios.email AS email,
+        usuarios.tipo AS tipo,
+        usuarios.ativo AS ativo,
+        organizacoes.nome AS organizacao_nome
     FROM usuarios
-    ORDER BY id DESC
-    """)
-
-    usuarios = cursor.fetchall()
-
-    conexao.close()
-
-    return linhas_para_dict(usuarios)
+    INNER JOIN organizacoes
+        ON usuarios.organizacao_id = organizacoes.id
+    {filtro_org}
+    ORDER BY usuarios.id DESC
+    """, parametros)
 
 
-# =========================
-# ATUALIZAR TIPO DE USUÁRIO
-# =========================
 def atualizar_tipo_usuario(
     usuario_id,
-    novo_tipo
+    novo_tipo,
+    organizacao_id=None
 ):
+    parametros = {
+        "usuario_id": usuario_id,
+        "novo_tipo": novo_tipo
+    }
+    filtro_org = ""
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    executar(f"""
     UPDATE usuarios
-    SET tipo = ?
-    WHERE id = ?
-    """, (
-        novo_tipo,
-        usuario_id
-    ))
+    SET tipo = :novo_tipo
+    WHERE id = :usuario_id
+    {filtro_org}
+    """, parametros)
 
-    conexao.commit()
 
-    conexao.close()
-
-    # =========================
-# MIGRAÇÃO - RESPONSÁVEL DO CHAMADO
-# =========================
 def adicionar_coluna_responsavel_chamado():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    PRAGMA table_info(chamados)
-    """)
-
-    colunas = cursor.fetchall()
-
-    nomes_colunas = [
-        coluna[1]
-        for coluna in colunas
-    ]
-
-    if "responsavel_id" not in nomes_colunas:
-
-        cursor.execute("""
-        ALTER TABLE chamados
-        ADD COLUMN responsavel_id INTEGER
-        """)
-
-        conexao.commit()
-
-    conexao.close()
+    adicionar_coluna(
+        "chamados",
+        "responsavel_id",
+        "INTEGER"
+    )
 
 
-# =========================
-# LISTAR ADMINS
-# =========================
-def listar_administradores():
+def listar_administradores(organizacao_id=None):
+    parametros = {}
+    filtro_org = ""
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = "AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    return consultar_lista(f"""
     SELECT
         id,
         nome,
@@ -1054,53 +988,63 @@ def listar_administradores():
         tipo
     FROM usuarios
     WHERE tipo IN ('admin', 'suporte')
+    AND ativo = 1
+    {filtro_org}
     ORDER BY nome ASC
-    """)
-
-    administradores = cursor.fetchall()
-
-    conexao.close()
-
-    return linhas_para_dict(administradores)
+    """, parametros)
 
 
-# =========================
-# ATRIBUIR RESPONSÁVEL
-# =========================
 def atribuir_responsavel_chamado(
     chamado_id,
-    responsavel_id
+    responsavel_id,
+    organizacao_id=None
 ):
+    parametros = {
+        "chamado_id": chamado_id,
+        "responsavel_id": responsavel_id
+    }
+    filtro_org = ""
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    executar(f"""
     UPDATE chamados
-    SET responsavel_id = ?
-    WHERE id = ?
-    """, (
-        responsavel_id,
-        chamado_id
-    ))
+    SET responsavel_id = :responsavel_id
+    WHERE id = :chamado_id
+    {filtro_org}
+    """, parametros)
 
-    conexao.commit()
 
-    conexao.close()
-
-# =========================
-# LISTAR CHAMADOS DO RESPONSÁVEL
-# =========================
 def listar_chamados_responsavel(
     responsavel_id,
     status="",
-    prioridade=""
+    prioridade="",
+    organizacao_id=None
 ):
+    parametros = {
+        "responsavel_id": responsavel_id,
+        "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    filtros = [
+        "chamados.responsavel_id = :responsavel_id"
+    ]
 
-    query = """
+    if organizacao_id is not None:
+        filtros.append("chamados.organizacao_id = :organizacao_id")
+        parametros["organizacao_id"] = organizacao_id
+
+    if status:
+        filtros.append("chamados.status = :status")
+        parametros["status"] = status
+
+    if prioridade:
+        filtros.append("chamados.prioridade = :prioridade")
+        parametros["prioridade"] = prioridade
+
+    return consultar_lista(f"""
     SELECT
         chamados.id AS id,
         chamados.titulo AS titulo,
@@ -1111,7 +1055,7 @@ def listar_chamados_responsavel(
         chamados.data_limite AS data_limite,
         CASE
             WHEN chamados.data_limite IS NOT NULL
-            AND datetime(chamados.data_limite) < datetime('now', 'localtime')
+            AND chamados.data_limite < :agora
             AND chamados.status NOT IN ('Resolvido', 'Encerrado')
             THEN 1
             ELSE 0
@@ -1122,141 +1066,99 @@ def listar_chamados_responsavel(
         ON chamados.usuario_id = usuarios.id
     LEFT JOIN usuarios AS responsavel
         ON chamados.responsavel_id = responsavel.id
-    WHERE chamados.responsavel_id = ?
-    """
+    WHERE {" AND ".join(filtros)}
+    ORDER BY chamados.id DESC
+    """, parametros)
 
-    parametros = [
-        responsavel_id
-    ]
 
-    if status:
-        query += " AND chamados.status = ?"
-        parametros.append(status)
-
-    if prioridade:
-        query += " AND chamados.prioridade = ?"
-        parametros.append(prioridade)
-
-    query += " ORDER BY chamados.id DESC"
-
-    cursor.execute(query, parametros)
-
-    chamados = cursor.fetchall()
-
-    conexao.close()
-
-    return linhas_para_dict(chamados)
-
-# =========================
-# BUSCAR RESPONSÁVEL DO CHAMADO
-# =========================
 def buscar_responsavel_chamado(chamado_id):
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
+    responsavel = consultar_um("""
     SELECT
-        usuarios.nome
+        usuarios.nome AS nome
     FROM chamados
     LEFT JOIN usuarios
         ON chamados.responsavel_id = usuarios.id
-    WHERE chamados.id = ?
-    """, (chamado_id,))
-
-    responsavel = cursor.fetchone()
-
-    conexao.close()
+    WHERE chamados.id = :chamado_id
+    """, {
+        "chamado_id": chamado_id
+    })
 
     if responsavel:
         return responsavel["nome"]
 
     return None
 
-# =========================
-# CHAMADOS SEM RESPONSÁVEL
-# =========================
-def contar_chamados_sem_responsavel():
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+def contar_chamados_sem_responsavel(organizacao_id=None):
+    parametros = {}
+    filtro_org = ""
 
-    cursor.execute("""
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
+
+    return consultar_scalar(f"""
     SELECT COUNT(*)
     FROM chamados
     WHERE responsavel_id IS NULL
     AND status NOT IN ('Resolvido', 'Encerrado')
-    """)
-
-    total = cursor.fetchone()[0]
-
-    conexao.close()
-
-    return total
+    {filtro_org}
+    """, parametros) or 0
 
 
-# =========================
-# CHAMADOS DO RESPONSÁVEL
-# =========================
-def contar_chamados_responsavel(responsavel_id):
+def contar_chamados_responsavel(responsavel_id, organizacao_id=None):
+    parametros = {
+        "responsavel_id": responsavel_id
+    }
+    filtro_org = ""
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    return consultar_scalar(f"""
     SELECT COUNT(*)
     FROM chamados
-    WHERE responsavel_id = ?
+    WHERE responsavel_id = :responsavel_id
     AND status NOT IN ('Resolvido', 'Encerrado')
-    """, (responsavel_id,))
-
-    total = cursor.fetchone()[0]
-
-    conexao.close()
-
-    return total
+    {filtro_org}
+    """, parametros) or 0
 
 
-# =========================
-# CHAMADOS ATRASADOS
-# =========================
-def contar_chamados_atrasados():
+def contar_chamados_atrasados(organizacao_id=None):
+    parametros = {
+        "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    filtro_org = ""
 
-    conexao = conectar()
-    cursor = conexao.cursor()
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
 
-    cursor.execute("""
+    return consultar_scalar(f"""
     SELECT COUNT(*)
     FROM chamados
     WHERE data_limite IS NOT NULL
-    AND datetime(data_limite) < datetime('now', 'localtime')
+    AND data_limite < :agora
     AND status NOT IN ('Resolvido', 'Encerrado')
-    """)
+    {filtro_org}
+    """, parametros) or 0
 
-    total = cursor.fetchone()[0]
 
-    conexao.close()
+def listar_atendentes(organizacao_id=None):
+    return listar_administradores(organizacao_id)
 
-    return total
 
-def listar_atendentes():
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-    SELECT
-        id,
-        nome,
-        email,
-        tipo
-    FROM usuarios
-    WHERE tipo IN ('admin', 'suporte')
-    ORDER BY nome ASC
-    """)
-
-    atendentes = cursor.fetchall()
-
-    conexao.close()
-
-    return linhas_para_dict(atendentes)
+def inicializar_banco():
+    criar_tabela_organizacoes()
+    criar_tabela_usuarios()
+    adicionar_coluna_organizacao_usuarios()
+    criar_tabela_recuperacao_senha()
+    criar_tabela_chamados()
+    adicionar_coluna_data_limite()
+    adicionar_coluna_responsavel_chamado()
+    adicionar_coluna_organizacao_chamados()
+    criar_tabela_historico()
+    adicionar_coluna_usuario_historico()
+    criar_tabela_comentarios()
+    criar_tabela_anexos()

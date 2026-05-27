@@ -92,32 +92,45 @@ def dashboard():
 
     usuario_id = session["usuario_id"]
     usuario_tipo = session["usuario_tipo"]
+    organizacao_id = session["organizacao_id"]
 
     if usuario_tipo in ["admin", "suporte"]:
 
-        total = contar_todos_chamados()
+        total = contar_todos_chamados(
+            organizacao_id
+        )
 
         abertos = contar_todos_chamados_status(
-            "Aberto"
+            "Aberto",
+            organizacao_id
         )
 
         andamento = contar_todos_chamados_status(
-            "Em andamento"
+            "Em andamento",
+            organizacao_id
         )
 
         resolvidos = contar_todos_chamados_status(
-            "Resolvido"
+            "Resolvido",
+            organizacao_id
         )
 
-        chamados_recentes = listar_chamados_recentes_admin()
+        chamados_recentes = listar_chamados_recentes_admin(
+            organizacao_id
+        )
 
-        sem_responsavel = contar_chamados_sem_responsavel()
+        sem_responsavel = contar_chamados_sem_responsavel(
+            organizacao_id
+        )
 
         meus_atendimentos = contar_chamados_responsavel(
-            usuario_id
+            usuario_id,
+            organizacao_id
         )
 
-        atrasados = contar_chamados_atrasados()
+        atrasados = contar_chamados_atrasados(
+            organizacao_id
+        )
 
         return render_template(
             "dashboard.html",
@@ -199,7 +212,8 @@ def novo_chamado():
             prioridade,
             usuario_id,
             data_criacao,
-            data_limite
+            data_limite,
+            session["organizacao_id"]
         )
 
         registrar_historico(
@@ -297,7 +311,10 @@ def meus_chamados():
 @login_required
 def visualizar_chamado(id_chamado):
 
-    chamado = buscar_chamado(id_chamado)
+    chamado = buscar_chamado(
+        id_chamado,
+        session["organizacao_id"]
+    )
 
     responsavel = buscar_responsavel_chamado(
         id_chamado
@@ -390,7 +407,8 @@ def visualizar_chamado(id_chamado):
                 atualizar_chamado(
                     id_chamado,
                     chamado["resposta"],
-                    "Em andamento"
+                    "Em andamento",
+                    session["organizacao_id"]
                 )
 
                 registrar_historico(
@@ -446,7 +464,8 @@ def visualizar_chamado(id_chamado):
             atualizar_chamado(
                 id_chamado,
                 resposta,
-                status
+                status,
+                session["organizacao_id"]
             )
 
             data_atualizacao = datetime.now().strftime(
@@ -509,7 +528,10 @@ def visualizar_anexo(id_anexo):
 
     chamado_id = anexo["chamado_id"]
 
-    chamado = buscar_chamado(chamado_id)
+    chamado = buscar_chamado(
+        chamado_id,
+        session["organizacao_id"]
+    )
 
     if not chamado:
 

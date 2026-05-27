@@ -184,6 +184,11 @@
                             action="/admin/chamado/{{ chamado.id }}/assumir"
                             class="mt-2"
                         >
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                value="{{ csrf_token() }}"
+                            >
 
                             <button
                                 type="submit"
@@ -330,6 +335,11 @@
         {% if chamado.status != "Encerrado" %}
 
             <form method="POST">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
 
                 <input
                     type="hidden"
@@ -442,6 +452,11 @@
         </h4>
 
         <form method="POST">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token() }}"
+            >
 
             <input
                 type="hidden"
