@@ -2,152 +2,90 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
+<div class="dashboard-header">
     <div>
-
-        <h1 class="fw-bold">
-            Gestão de Acessos
-        </h1>
-
-        <p class="text-muted">
-            Cadastre usuários e mantenha permissões alinhadas à operação.
-        </p>
-
+        <h2>Gestão de acessos</h2>
+        <p>Controle perfis, responsabilidades e permissões da operação interna.</p>
     </div>
 
-    <a
-        href="/dashboard"
-        class="btn btn-outline-dark"
-    >
-        Voltar ao Início
+    <a href="/dashboard" class="app-button-outline">
+        <i data-lucide="layout-dashboard"></i>
+        Voltar ao painel
     </a>
-
 </div>
 
-<div class="card shadow-sm border-0 mb-4">
-
-    <div class="card-body">
-
-        <h4 class="mb-4">
-            Criar acesso
-        </h4>
-
-        <form
-            method="POST"
-            action="/admin/usuarios/criar"
-            class="row g-3"
-        >
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-            >
-
-            <div class="col-md-3">
-
-                <label class="form-label">
-                    Nome
-                </label>
-
-                <input
-                    type="text"
-                    name="nome"
-                    class="form-control"
-                    placeholder="Nome do usuário"
-                    required
-                >
-
-            </div>
-
-            <div class="col-md-3">
-
-                <label class="form-label">
-                    Email
-                </label>
-
-                <input
-                    type="email"
-                    name="email"
-                    class="form-control"
-                    placeholder="usuario@empresa.com"
-                    required
-                >
-
-            </div>
-
-            <div class="col-md-3">
-
-                <label class="form-label">
-                    Senha temporária
-                </label>
-
-                <input
-                    type="password"
-                    name="senha"
-                    class="form-control"
-                    placeholder="Mínimo de 8 caracteres"
-                    required
-                >
-
-            </div>
-
-            <div class="col-md-2">
-
-                <label class="form-label">
-                    Perfil
-                </label>
-
-                <select
-                    name="tipo"
-                    class="form-select"
-                >
-
-                    <option value="cliente">
-                        Usuário
-                    </option>
-
-                    <option value="suporte">
-                        Suporte
-                    </option>
-
-                    <option value="admin">
-                        Admin
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-1 d-flex align-items-end">
-
-                <button
-                    type="submit"
-                    class="btn btn-primary w-100"
-                >
-                    Criar
-                </button>
-
-            </div>
-
-        </form>
-
+<section class="content-card mb-4">
+    <div class="content-card-header">
+        <div>
+            <h2>Criar acesso interno</h2>
+            <p>Cadastre usuários com perfil adequado ao papel dentro do fluxo de atendimento.</p>
+        </div>
     </div>
 
-</div>
+    <form method="POST" action="/admin/usuarios/criar" class="row g-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-<div class="card shadow-sm border-0">
+        <div class="col-md-3">
+            <label class="form-label">Nome completo</label>
+            <input
+                type="text"
+                name="nome"
+                class="form-control"
+                placeholder="Nome do colaborador"
+                required
+            >
+        </div>
 
-    <div class="card-body">
+        <div class="col-md-3">
+            <label class="form-label">Email corporativo</label>
+            <input
+                type="email"
+                name="email"
+                class="form-control"
+                placeholder="usuario@empresa.com"
+                required
+            >
+        </div>
 
-        <h4 class="mb-4">
-            Usuários cadastrados
-        </h4>
+        <div class="col-md-3">
+            <label class="form-label">Senha temporária</label>
+            <input
+                type="password"
+                name="senha"
+                class="form-control"
+                placeholder="Mínimo de 8 caracteres"
+                required
+            >
+        </div>
 
-        <table class="table table-hover align-middle">
+        <div class="col-md-2">
+            <label class="form-label">Perfil de acesso</label>
+            <select name="tipo" class="form-select">
+                <option value="cliente">Solicitante</option>
+                <option value="suporte">Suporte</option>
+                <option value="admin">Administrador</option>
+            </select>
+        </div>
 
-            <thead class="table-dark">
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="app-button-primary w-100 justify-content-center">
+                Criar
+            </button>
+        </div>
+    </form>
+</section>
 
+<section class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h2>Usuários cadastrados</h2>
+            <p class="text-muted mb-0">Revise perfis ativos e ajuste permissões quando necessário.</p>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
@@ -155,132 +93,59 @@
                     <th>Perfil</th>
                     <th>Ação</th>
                 </tr>
-
             </thead>
 
             <tbody>
-
                 {% for usuario in usuarios %}
+                    <tr>
+                        <td data-label="ID">#{{ usuario.id }}</td>
+                        <td data-label="Nome">{{ usuario.nome }}</td>
+                        <td data-label="Email">{{ usuario.email }}</td>
+                        <td data-label="Perfil">
+                            {% if usuario.tipo == "admin" %}
+                                <span class="status-badge status-ai">Administrador</span>
+                            {% elif usuario.tipo == "suporte" %}
+                                <span class="status-badge status-ready">Suporte</span>
+                            {% else %}
+                                <span class="status-badge status-closed">Solicitante</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Ação">
+                            {% if usuario.id == session["usuario_id"] %}
+                                <span class="text-muted">Conta atual</span>
+                            {% else %}
+                                <form method="POST" action="/admin/usuarios/{{ usuario.id }}/tipo" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <tr>
+                                    <select name="tipo" class="form-select form-select-sm" style="max-width: 160px;">
+                                        <option value="cliente" {% if usuario.tipo == "cliente" %}selected{% endif %}>
+                                            Solicitante
+                                        </option>
+                                        <option value="suporte" {% if usuario.tipo == "suporte" %}selected{% endif %}>
+                                            Suporte
+                                        </option>
+                                        <option value="admin" {% if usuario.tipo == "admin" %}selected{% endif %}>
+                                            Administrador
+                                        </option>
+                                    </select>
 
-                    <td data-label="ID">
-                        #{{ usuario.id }}
-                    </td>
-
-                    <td data-label="Nome">
-                        {{ usuario.nome }}
-                    </td>
-
-                    <td data-label="Email">
-                        {{ usuario.email }}
-                    </td>
-
-                    <td data-label="Perfil">
-
-                        {% if usuario.tipo == "admin" %}
-
-                            <span class="badge bg-warning text-dark">
-                                Admin
-                            </span>
-
-                        {% elif usuario.tipo == "suporte" %}
-
-                            <span class="badge bg-info text-dark">
-                                Suporte
-                            </span>
-
-                        {% else %}
-
-                            <span class="badge bg-secondary">
-                                Usuário
-                            </span>
-
-                        {% endif %}
-
-                    </td>
-
-                    <td data-label="Ação">
-
-                        {% if usuario.id == session["usuario_id"] %}
-
-                            <span class="text-muted">
-                                Conta atual
-                            </span>
-
-                        {% else %}
-
-                            <form
-                                method="POST"
-                                action="/admin/usuarios/{{ usuario.id }}/tipo"
-                                class="d-flex gap-2"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="csrf_token"
-                                    value="{{ csrf_token() }}"
-                                >
-
-                                <select
-                                    name="tipo"
-                                    class="form-select form-select-sm"
-                                    style="max-width: 140px;"
-                                >
-
-                                    <option
-                                        value="cliente"
-                                        {% if usuario.tipo == "cliente" %}selected{% endif %}
-                                    >
-                                        Usuário
-                                    </option>
-
-                                    <option
-                                        value="suporte"
-                                        {% if usuario.tipo == "suporte" %}selected{% endif %}
-                                    >
-                                        Suporte
-                                    </option>
-
-                                    <option
-                                        value="admin"
-                                        {% if usuario.tipo == "admin" %}selected{% endif %}
-                                    >
-                                        Admin
-                                    </option>
-
-                                </select>
-
-                                <button
-                                    type="submit"
-                                    class="btn btn-sm btn-primary"
-                                >
-                                    Salvar
-                                </button>
-
-                            </form>
-
-                        {% endif %}
-
-                    </td>
-
-                </tr>
-
+                                    <button type="submit" class="app-button-outline compact-action">
+                                        Salvar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
                 {% else %}
-
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                        Nenhum usuário encontrado.
-                    </td>
-                </tr>
-
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Nenhum usuário cadastrado.
+                        </td>
+                    </tr>
                 {% endfor %}
-
             </tbody>
-
         </table>
-
     </div>
-
-</div>
+</section>
 
 {% endblock %}

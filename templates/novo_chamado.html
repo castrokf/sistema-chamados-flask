@@ -2,76 +2,55 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
+<div class="dashboard-header">
     <div>
-
-        <h1 class="fw-bold">
-            Novo Chamado
-        </h1>
-
-        <p class="text-muted">
-            Registre um novo chamado para acompanhamento da equipe interna.
-        </p>
-
+        <h2>Nova solicitação</h2>
+        <p>Descreva o problema ou necessidade para iniciar a triagem inteligente do atendimento.</p>
     </div>
 
-    <a
-        href="/dashboard"
-        class="btn btn-outline-dark"
-    >
-        Voltar
+    <a href="/dashboard" class="app-button-outline">
+        <i data-lucide="layout-dashboard"></i>
+        Voltar ao painel
     </a>
-
 </div>
 
-<div class="card shadow-sm border-0">
-
-    <div class="card-body">
+<section class="content-grid form-layout">
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Dados da solicitação</h2>
+                <p>Quanto mais claro o contexto, mais rápida será a qualificação pelo Assistente Nortia.</p>
+            </div>
+        </div>
 
         <form method="POST" enctype="multipart/form-data">
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-            >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="mb-3">
-
-                <label class="form-label">
-                    Título
-                </label>
-
+                <label class="form-label">Assunto</label>
                 <input
                     type="text"
                     name="titulo"
                     class="form-control"
-                    placeholder="Ex: Erro ao acessar o sistema"
+                    placeholder="Ex.: Erro ao acessar o sistema financeiro"
                     required
                 >
-
+                <div class="form-text">Use uma frase curta que resuma o impacto principal.</div>
             </div>
 
             <div class="mb-3">
-
-                <label class="form-label">
-                    Descrição
-                </label>
-
+                <label class="form-label">Descrição da solicitação</label>
                 <textarea
                     name="descricao"
                     class="form-control"
-                    rows="5"
-                    placeholder="Descreva o problema com detalhes."
+                    rows="6"
+                    placeholder="Explique o que aconteceu, quando começou, quem foi impactado e se existe alguma alternativa temporária."
                     required
                 ></textarea>
-
             </div>
 
             <div class="urgent-request mb-4">
-
                 <div class="form-check">
-
                     <input
                         class="form-check-input"
                         type="checkbox"
@@ -79,27 +58,18 @@
                         id="urgencia_extrema"
                     >
 
-                    <label
-                        class="form-check-label"
-                        for="urgencia_extrema"
-                    >
+                    <label class="form-check-label" for="urgencia_extrema">
                         Solicitar urgência extrema
                     </label>
-
                 </div>
 
                 <div class="form-text">
-                    Use apenas quando o problema impedir uma operação crítica ou causar paralisação imediata.
+                    Use apenas quando houver impacto crítico na operação, paralisação imediata ou atendimento ao cliente comprometido.
                 </div>
-
             </div>
 
             <div class="mb-4">
-
-                <label class="form-label">
-                    Anexo
-                </label>
-
+                <label class="form-label">Evidência ou anexo</label>
                 <input
                     type="file"
                     name="anexo"
@@ -108,22 +78,41 @@
                 >
 
                 <div class="form-text">
-                    Envie um print, imagem ou PDF que ajude o suporte a entender o problema.
+                    Prints, imagens ou PDFs ajudam a reduzir idas e vindas durante a triagem.
                 </div>
-
             </div>
 
-            <button
-                type="submit"
-                class="btn btn-primary"
-            >
-                Abrir chamado
+            <button type="submit" class="app-button-primary">
+                <i data-lucide="send"></i>
+                Enviar solicitação
             </button>
-
         </form>
+    </article>
 
-    </div>
+    <aside class="content-card support-note">
+        <div class="content-card-header">
+            <div>
+                <h2>Como a triagem funciona</h2>
+                <p>O Assistente Nortia organiza o contexto antes da atuação humana.</p>
+            </div>
+            <span class="ai-pill">IA</span>
+        </div>
 
-</div>
+        <div class="insight-list">
+            <div>
+                <strong>1. Coleta inicial</strong>
+                <span>A IA registra perguntas objetivas conforme o tipo de problema.</span>
+            </div>
+            <div>
+                <strong>2. Priorização sugerida</strong>
+                <span>O sistema sugere impacto e prioridade para apoiar a equipe.</span>
+            </div>
+            <div>
+                <strong>3. Encaminhamento</strong>
+                <span>O suporte assume a solicitação com resumo técnico disponível.</span>
+            </div>
+        </div>
+    </aside>
+</section>
 
 {% endblock %}

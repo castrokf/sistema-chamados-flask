@@ -40,7 +40,7 @@ def test_admin_acessa_painel_admin(client, login):
     resposta = client.get("/admin")
 
     assert resposta.status_code == 200
-    assert "Central de Atendimentos" in resposta.get_data(as_text=True)
+    assert "Central de atendimento" in resposta.get_data(as_text=True)
 
 
 def test_meus_atendimentos_e_exclusivo_do_suporte(client, login):
@@ -66,7 +66,7 @@ def test_suporte_acessa_meus_atendimentos(client, login):
     resposta = client.get("/admin/meus-atendimentos")
 
     assert resposta.status_code == 200
-    assert "Meus Atendimentos" in resposta.get_data(as_text=True)
+    assert "Minha fila de atendimento" in resposta.get_data(as_text=True)
 
 
 def test_admin_cria_acesso_interno(client, login, db_module, csrf_token):

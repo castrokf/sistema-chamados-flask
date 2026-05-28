@@ -2,12 +2,24 @@
 
 {% block content %}
 
-<section class="content-grid">
+<div class="dashboard-header">
+    <div>
+        <h2>Inteligência operacional</h2>
+        <p>Indicadores consolidados para análise gerencial e melhoria contínua do atendimento.</p>
+    </div>
+
+    <a href="/dashboard" class="app-button-outline">
+        <i data-lucide="layout-dashboard"></i>
+        Voltar ao painel
+    </a>
+</div>
+
+<section class="content-grid reports-grid">
     <article class="chart-card">
         <div class="content-card-header">
             <div>
                 <h2>Chamados por período</h2>
-                <p>Volume recente de chamados.</p>
+                <p>Evolução dos registros nos últimos dias disponíveis.</p>
             </div>
         </div>
         <canvas data-chart-period></canvas>
@@ -17,7 +29,7 @@
         <div class="content-card-header">
             <div>
                 <h2>Chamados por status</h2>
-                <p>Distribuição atual da operação.</p>
+                <p>Distribuição operacional da carteira de atendimento.</p>
             </div>
         </div>
         <canvas data-chart-status></canvas>
@@ -26,12 +38,23 @@
     <article class="content-card">
         <div class="content-card-header">
             <div>
-                <h2>Próximos indicadores</h2>
-                <p>Estrutura preparada para SLA, prioridade e categorias recorrentes.</p>
+                <h2>Indicadores planejados</h2>
+                <p>Estrutura preparada para ampliar a leitura executiva do suporte.</p>
             </div>
         </div>
-        <div class="empty-state">
-            Tempo médio de resolução, SLA dentro do prazo e categorias serão ligados aos dados históricos na próxima etapa.
+        <div class="insight-list">
+            <div>
+                <strong>Tempo médio de resolução</strong>
+                <span>Será calculado a partir do histórico de encerramento.</span>
+            </div>
+            <div>
+                <strong>SLA dentro do prazo</strong>
+                <span>Indicará aderência por prioridade e responsável.</span>
+            </div>
+            <div>
+                <strong>Categorias recorrentes</strong>
+                <span>Apoiará prevenção de incidentes e melhoria de processos.</span>
+            </div>
         </div>
     </article>
 </section>

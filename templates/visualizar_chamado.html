@@ -19,8 +19,8 @@
 
     <div class="detail-tabs">
         <span class="detail-tab active">Resumo</span>
-        <span class="detail-tab">Tratativa</span>
-        <span class="detail-tab">IA</span>
+        <span class="detail-tab">Conversa e tratativa</span>
+        <span class="detail-tab">Triagem IA</span>
         <span class="detail-tab">Anexos</span>
         <span class="detail-tab">Histórico</span>
         {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
@@ -34,7 +34,7 @@
             <div>
                 <span>SLA</span>
                 <strong>{{ chamado.data_limite or "-" }}</strong>
-                <p>Prazo de atendimento</p>
+                <p>Prazo operacional previsto</p>
             </div>
         </article>
 
@@ -43,14 +43,14 @@
             <div>
                 <span>Responsável</span>
                 <strong>{{ responsavel or "Não atribuído" }}</strong>
-                <p>Suporte atual</p>
+                <p>Atendimento humano</p>
             </div>
         </article>
 
         <article class="metric-card metric-purple">
             <div class="metric-icon"><i data-lucide="sparkles"></i></div>
             <div>
-                <span>Prioridade IA</span>
+                <span>Prioridade sugerida</span>
                 <strong>{{ chamado.ai_suggested_priority or chamado.prioridade }}</strong>
                 <p>{{ chamado.ai_suggested_category or "Categoria pendente" }}</p>
             </div>
@@ -64,15 +64,15 @@
         <div class="content-card-header">
             <div>
                 <h2>Resumo</h2>
-                <p>Informações principais do chamado.</p>
+                <p>Contexto executivo da solicitação e apoio da triagem inteligente.</p>
             </div>
         </div>
 
-        <p><strong>Solicitante:</strong> {{ chamado.usuario_id }}</p>
+        <p><strong>Solicitante:</strong> {{ solicitante.nome if solicitante else "Usuário #" ~ chamado.usuario_id }}</p>
         <p><strong>Data:</strong> {{ chamado.data_criacao }}</p>
-        <p><strong>Resumo gerado pela IA:</strong></p>
+        <p><strong>Resumo técnico gerado pela IA:</strong></p>
         <div class="empty-state text-start">
-            {{ chamado.ai_summary or "Resumo ainda não gerado." }}
+            {{ chamado.ai_summary or "Resumo técnico ainda não gerado." }}
         </div>
 
         {% if session.get("usuario_tipo") == "suporte" %}
@@ -89,8 +89,8 @@
     <article class="content-card" data-ticket-chat="{{ chamado.id }}">
         <div class="content-card-header">
             <div>
-                <h2>Tratativa</h2>
-                <p>Chat do chamado com cliente, suporte e Assistente Nortia.</p>
+                <h2>Conversa e tratativa</h2>
+                <p>Registro centralizado entre solicitante, suporte e Assistente Nortia.</p>
             </div>
         </div>
 
@@ -108,7 +108,7 @@
         {% if chamado.status != "Encerrado" %}
             <form class="mt-3" data-chat-form>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <textarea name="message" class="form-control mb-2" rows="3" placeholder="Escreva uma mensagem..." required></textarea>
+                <textarea name="message" class="form-control mb-2" rows="3" placeholder="Registre uma atualização objetiva para este atendimento..." required></textarea>
                 <button type="submit" class="app-button-primary">Enviar mensagem</button>
             </form>
         {% endif %}
@@ -117,8 +117,8 @@
     <article class="content-card">
         <div class="content-card-header">
             <div>
-                <h2>IA</h2>
-                <p>Perguntas, categoria e confiança da triagem.</p>
+                <h2>Triagem IA</h2>
+                <p>Perguntas, categoria sugerida e nível de confiança da análise.</p>
             </div>
             <span class="ai-pill">IA</span>
         </div>
@@ -143,7 +143,7 @@
         <div class="content-card-header">
             <div>
                 <h2>Anexos</h2>
-                <p>Arquivos enviados no chamado.</p>
+                <p>Evidências enviadas para apoiar a análise do atendimento.</p>
             </div>
         </div>
 
@@ -153,7 +153,7 @@
                 <a href="/anexo/{{ anexo.id }}" target="_blank" class="app-button-outline">Abrir</a>
             </div>
         {% else %}
-            <div class="empty-state">Nenhum anexo enviado.</div>
+            <div class="empty-state">Nenhuma evidência anexada.</div>
         {% endfor %}
     </article>
 
@@ -161,7 +161,7 @@
         <div class="content-card-header">
             <div>
                 <h2>Histórico</h2>
-                <p>Movimentações do atendimento.</p>
+                <p>Linha do tempo com as principais movimentações registradas.</p>
             </div>
         </div>
 
@@ -179,8 +179,8 @@
         <article class="content-card">
             <div class="content-card-header">
                 <div>
-                    <h2>Atualização do atendimento</h2>
-                    <p>Resposta, status e tratativa humana.</p>
+                    <h2>Gestão do atendimento</h2>
+                    <p>Atualize resposta, status e próximos passos da tratativa humana.</p>
                 </div>
             </div>
 
@@ -188,7 +188,7 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="acao" value="atualizar_chamado">
 
-                <label class="form-label">Resposta</label>
+                <label class="form-label">Resposta ou orientação ao solicitante</label>
                 <textarea name="resposta" class="form-control mb-3" rows="5">{{ chamado.resposta }}</textarea>
 
                 <label class="form-label">Status</label>
@@ -198,7 +198,7 @@
                     {% endfor %}
                 </select>
 
-                <button type="submit" class="app-button-primary">Salvar atualização</button>
+                <button type="submit" class="app-button-primary">Salvar tratativa</button>
             </form>
         </article>
     {% endif %}

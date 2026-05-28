@@ -256,6 +256,14 @@ body.app-body {
     margin-bottom: 22px;
 }
 
+.dashboard-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .dashboard-header h2,
 .content-card h2,
 .table-card h2 {
@@ -273,7 +281,7 @@ body.app-body {
 
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
     gap: 16px;
     margin-bottom: 18px;
 }
@@ -288,6 +296,8 @@ body.app-body {
     gap: 14px;
     align-items: start;
     box-shadow: var(--shadow-sm);
+    min-width: 0;
+    position: static;
 }
 
 .metric-card .metric-icon {
@@ -314,7 +324,7 @@ body.app-body {
 .metric-card strong {
     display: block;
     color: var(--color-text);
-    font-size: 1.9rem;
+    font-size: 1.58rem;
     line-height: 1;
     margin: 8px 0;
 }
@@ -357,6 +367,21 @@ body.app-body {
     margin-bottom: 18px;
 }
 
+.dashboard-focus-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.reports-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(300px, 0.78fr);
+}
+
+.form-layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+}
+
 .content-card,
 .chart-card,
 .table-card {
@@ -389,6 +414,79 @@ body.app-body {
         radial-gradient(circle at 85% 30%, rgba(20, 184, 166, 0.24), transparent 26%),
         linear-gradient(145deg, #ffffff, #f6fffd);
     overflow: hidden;
+}
+
+.compact-card {
+    padding: 18px;
+}
+
+.triage-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.triage-summary div,
+.attention-list a,
+.insight-list div {
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.triage-summary div {
+    padding: 14px;
+}
+
+.triage-summary strong,
+.attention-list strong {
+    display: block;
+    color: var(--color-text);
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.triage-summary span,
+.attention-list span,
+.insight-list span {
+    display: block;
+    color: var(--color-muted);
+    font-size: 0.84rem;
+    font-weight: 800;
+    margin-top: 6px;
+}
+
+.attention-list,
+.insight-list {
+    display: grid;
+    gap: 12px;
+}
+
+.attention-list a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.attention-list a:hover {
+    border-color: #9bded5;
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.insight-list div {
+    padding: 14px;
+}
+
+.insight-list strong {
+    display: block;
+    color: var(--color-text);
+    font-weight: 950;
 }
 
 .ai-triage-grid {
@@ -465,6 +563,13 @@ body.app-body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.table-card > .card-body {
+    padding: 20px;
+    overflow-x: auto;
 }
 
 .table-scroll {
@@ -491,6 +596,7 @@ body.app-body {
     border-bottom: 1px solid #edf2f7;
     color: var(--color-text);
     font-weight: 700;
+    vertical-align: middle;
 }
 
 .data-table tr:hover td {
@@ -539,6 +645,14 @@ body.app-body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    border-width: 1px;
+    line-height: 1.1;
+}
+
+.compact-action {
+    min-height: 36px;
+    padding: 8px 11px;
+    font-size: 0.86rem;
 }
 
 .app-button-outline {
@@ -610,12 +724,61 @@ body.app-body {
     text-align: center;
 }
 
+.search-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.search-panel-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.support-note {
+    align-self: start;
+}
+
+.form-control,
+.form-select {
+    border-color: var(--color-border);
+    border-radius: 12px;
+    min-height: 44px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #5dd6c7;
+    box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.12);
+}
+
+.form-label {
+    color: var(--color-text);
+    font-weight: 900;
+}
+
+.form-text {
+    color: var(--color-muted);
+}
+
+.urgent-request {
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    border-radius: 14px;
+    padding: 14px;
+}
+
 @media (max-width: 1180px) {
     .metrics-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .content-grid {
+    .content-grid,
+    .dashboard-focus-grid,
+    .reports-grid,
+    .form-layout {
         grid-template-columns: 1fr;
     }
 }
@@ -665,5 +828,16 @@ body.app-body {
     .dashboard-header {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .dashboard-actions,
+    .search-panel,
+    .search-panel-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .triage-summary {
+        grid-template-columns: 1fr;
     }
 }

@@ -79,6 +79,6 @@
             }
         })
         .catch(function () {
-            // Mantém o dashboard funcional mesmo se a API estiver indisponível.
+            // Mantém a página de relatórios funcional mesmo se a API estiver indisponível.
         });
 })();

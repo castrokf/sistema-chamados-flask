@@ -12,7 +12,7 @@
     <div class="topbar-heading">
         <h1>{{ page_heading|default("Visão operacional") }}</h1>
         <p>
-            {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ " — acompanhamento dos seus atendimentos") }}
+            {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ " — visão consolidada da operação") }}
         </p>
     </div>
 
@@ -22,8 +22,8 @@
             type="search"
             name="q"
             value="{{ request.args.get('q', '') }}"
-            placeholder="Buscar chamados, usuários, IDs..."
-            aria-label="Buscar chamados, usuários, IDs"
+            placeholder="Buscar chamados, usuários ou IDs..."
+            aria-label="Buscar chamados, usuários ou IDs"
         >
     </form>
 

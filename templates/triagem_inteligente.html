@@ -8,27 +8,27 @@
     <article class="metric-card metric-purple">
         <div class="metric-icon"><i data-lucide="sparkles"></i></div>
         <div>
-            <span>Em triagem</span>
+            <span>Em análise pela IA</span>
             <strong>{{ chamados|selectattr("status", "equalto", "Em triagem pela IA")|list|length }}</strong>
-            <p>Analisando com IA</p>
+            <p>Coleta inicial em andamento</p>
         </div>
     </article>
 
     <article class="metric-card metric-orange">
         <div class="metric-icon"><i data-lucide="message-circle-question"></i></div>
         <div>
-            <span>Aguardando cliente</span>
+            <span>Aguardando complemento</span>
             <strong>{{ chamados|selectattr("status", "equalto", "Aguardando informações do cliente")|list|length }}</strong>
-            <p>Coleta pendente</p>
+            <p>Informações pendentes do solicitante</p>
         </div>
     </article>
 
     <article class="metric-card metric-teal">
         <div class="metric-icon"><i data-lucide="badge-check"></i></div>
         <div>
-            <span>Pronto suporte</span>
+            <span>Pronto para suporte</span>
             <strong>{{ chamados|selectattr("status", "equalto", "Pronto para suporte")|list|length }}</strong>
-            <p>Aguardando atribuição</p>
+            <p>Qualificado para atendimento humano</p>
         </div>
     </article>
 </section>
@@ -36,8 +36,8 @@
 <section class="table-card">
     <div class="table-card-header">
         <div>
-            <h2>Fila de Triagem Inteligente</h2>
-            <p class="text-muted mb-0">Chamados em análise, aguardando cliente ou prontos para suporte.</p>
+            <h2>Fila de triagem inteligente</h2>
+            <p class="text-muted mb-0">Solicitações qualificadas pela IA antes do encaminhamento ao suporte.</p>
         </div>
 
         <form method="GET" class="d-flex gap-2">
@@ -56,10 +56,10 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Título</th>
+                    <th>Assunto</th>
                     <th>Status</th>
-                    <th>Prioridade IA</th>
-                    <th>Resumo IA</th>
+                    <th>Prioridade sugerida</th>
+                    <th>Resumo técnico</th>
                     <th>Ação</th>
                 </tr>
             </thead>
@@ -70,12 +70,12 @@
                         <td>{{ chamado.titulo }}</td>
                         <td>{{ status_badge(chamado.status) }}</td>
                         <td>{{ priority_badge(chamado.ai_suggested_priority or chamado.prioridade) }}</td>
-                        <td>{{ "Disponível" if chamado.ai_summary else "Pendente" }}</td>
+                        <td>{{ "Gerado" if chamado.ai_summary else "Aguardando" }}</td>
                         <td><a href="/chamado/{{ chamado.id }}" class="app-button-outline">Abrir</a></td>
                     </tr>
                 {% else %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">Nenhum chamado em triagem.</td>
+                        <td colspan="6" class="text-center text-muted py-4">Nenhuma solicitação em triagem no momento.</td>
                     </tr>
                 {% endfor %}
             </tbody>

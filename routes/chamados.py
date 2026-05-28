@@ -32,6 +32,7 @@ from database import (
     listar_anexos,
     buscar_anexo,
     buscar_responsavel_chamado,
+    buscar_usuario_por_id,
     contar_chamados_sem_responsavel,
     contar_chamados_responsavel,
     contar_chamados_atrasados,
@@ -223,7 +224,7 @@ def dashboard():
             tipo_usuario=usuario_tipo,
             page_title="Dashboard - Nortia",
             page_heading="Visão operacional",
-            page_subtitle=f"Bem-vindo, {session['usuario_nome']} — indicadores de atendimento",
+            page_subtitle=f"Bem-vindo, {session['usuario_nome']} — visão consolidada da operação de atendimento",
             total=total,
             abertos=abertos,
             andamento=andamento,
@@ -293,7 +294,7 @@ def dashboard():
         tipo_usuario=usuario_tipo,
         page_title="Dashboard - Nortia",
         page_heading="Visão operacional",
-        page_subtitle=f"Bem-vindo, {session['usuario_nome']} — acompanhamento dos seus atendimentos",
+        page_subtitle=f"Bem-vindo, {session['usuario_nome']} — acompanhe solicitações, prazos e interações com a equipe",
         total=total,
         abertos=abertos,
         andamento=andamento,
@@ -423,7 +424,7 @@ def novo_chamado():
                 )
 
         flash(
-            "Chamado aberto com sucesso.",
+            "Solicitação registrada com sucesso. A triagem inteligente já foi iniciada.",
             "success"
         )
 
@@ -431,9 +432,9 @@ def novo_chamado():
 
     return render_template(
         "novo_chamado.html",
-        page_title="Novo chamado - Nortia",
-        page_heading="Novo chamado",
-        page_subtitle="Documente o problema para iniciar a triagem inteligente"
+        page_title="Nova solicitação - Nortia",
+        page_heading="Nova solicitação",
+        page_subtitle="Descreva o contexto para iniciar a triagem inteligente e acelerar o atendimento"
     )
 
 
@@ -468,9 +469,9 @@ def meus_chamados():
         "meus_chamados.html",
         chamados=lista_chamados,
         pesquisa=pesquisa,
-        page_title="Meus chamados - Nortia",
-        page_heading="Meus chamados",
-        page_subtitle="Acompanhe os chamados vinculados ao seu acesso interno"
+        page_title="Minhas solicitações - Nortia",
+        page_heading="Minhas solicitações",
+        page_subtitle="Acompanhe solicitações, prazos e atualizações da equipe de atendimento"
     )
 
 
@@ -545,6 +546,10 @@ def visualizar_chamado(id_chamado):
     mensagens = listar_mensagens_chamado(
         id_chamado,
         tipo_usuario in ["admin", "suporte"]
+    )
+
+    solicitante = buscar_usuario_por_id(
+        chamado["usuario_id"]
     )
 
     perguntas_ia = generate_ai_triage_questions(chamado)
@@ -704,11 +709,12 @@ def visualizar_chamado(id_chamado):
         comentarios=comentarios,
         anexos=anexos,
         responsavel=responsavel,
+        solicitante=solicitante,
         mensagens=mensagens,
         perguntas_ia=perguntas_ia,
         page_title=f"Chamado CH-{id_chamado:04d} - Nortia",
         page_heading=f"Chamado CH-{id_chamado:04d}",
-        page_subtitle="Resumo, tratativa e triagem inteligente do atendimento"
+        page_subtitle="Resumo executivo, tratativa e apoio da triagem inteligente"
     )
 
 # =========================
@@ -852,7 +858,7 @@ def triagem_inteligente():
         status_ia=STATUS_IA,
         page_title="Triagem Inteligente - Nortia",
         page_heading="Triagem Inteligente",
-        page_subtitle="Fluxo de triagem com IA em tempo real"
+        page_subtitle="Monitore solicitações analisadas pela IA antes da atuação do suporte"
     )
 
 
@@ -863,7 +869,7 @@ def relatorios():
         "relatorios.html",
         page_title="Relatórios - Nortia",
         page_heading="Relatórios",
-        page_subtitle="Indicadores operacionais e desempenho do atendimento"
+        page_subtitle="Acompanhe tendências, status e indicadores de atendimento"
     )
 
 
@@ -874,7 +880,7 @@ def configuracoes():
         "configuracoes.html",
         page_title="Configurações - Nortia",
         page_heading="Configurações",
-        page_subtitle="Preferências e preparação para integrações futuras"
+        page_subtitle="Parâmetros operacionais, integrações e preparação para automações"
     )
 
 

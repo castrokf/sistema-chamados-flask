@@ -7,99 +7,115 @@
 
 <div class="dashboard-header">
     <div>
-        <h2>Dashboard operacional</h2>
-        <p>Visão executiva de chamados, triagem e atendimento.</p>
+        <h2>Painel executivo</h2>
+        <p>Visão objetiva da operação, com foco em prioridade, fila e tomada de decisão.</p>
     </div>
 
-    {% if tipo_usuario in ["admin", "suporte"] %}
-        <a href="/admin" class="app-button-primary">
-            <i data-lucide="arrow-up-right"></i>
-            Abrir central
+    <div class="dashboard-actions">
+        <a href="/relatorios" class="app-button-outline">
+            <i data-lucide="bar-chart-3"></i>
+            Ver relatórios
         </a>
-    {% else %}
-        <a href="/novo_chamado" class="app-button-primary">
-            <i data-lucide="plus-circle"></i>
-            Novo chamado
-        </a>
-    {% endif %}
+
+        {% if tipo_usuario in ["admin", "suporte"] %}
+            <a href="/admin" class="app-button-primary">
+                <i data-lucide="arrow-up-right"></i>
+                Abrir central
+            </a>
+        {% else %}
+            <a href="/novo_chamado" class="app-button-primary">
+                <i data-lucide="plus-circle"></i>
+                Nova solicitação
+            </a>
+        {% endif %}
+    </div>
 </div>
 
-<section class="metrics-grid">
-    {{ metric_card("Total", total, "Todos os chamados", "tickets", "teal") }}
-    {{ metric_card("Abertos", abertos, "Aguardando atendimento", "clock-3", "orange") }}
-    {{ metric_card("Em andamento", andamento, "Em atendimento", "activity", "blue") }}
-    {{ metric_card("Resolvidos", resolvidos, "Concluídos", "check-circle-2", "green") }}
-    {{ metric_card("Em triagem IA", triagem_ia, "Analisando com IA", "sparkles", "purple") }}
-    {{ metric_card("Prontos suporte", prontos_suporte, "Aguardando atribuição", "badge-check", "teal") }}
+<section class="metrics-grid dashboard-metrics">
+    {{ metric_card("Total", total, "Carteira de chamados", "tickets", "teal") }}
+    {{ metric_card("Abertos", abertos, "Aguardando primeira análise", "clock-3", "orange") }}
+    {{ metric_card("Em atendimento", andamento, "Em tratativa pela equipe", "activity", "blue") }}
+    {{ metric_card("Resolvidos", resolvidos, "Concluídos no ciclo atual", "check-circle-2", "green") }}
+    {{ metric_card("Triagem IA", triagem_ia, "Coleta e análise em andamento", "sparkles", "purple") }}
+    {{ metric_card("Prontos", prontos_suporte, "Liberados para atendimento humano", "badge-check", "teal") }}
 </section>
 
-<section class="content-grid">
+<section class="dashboard-focus-grid">
 
-    <article class="content-card ai-triage-card">
+    <article class="content-card ai-triage-card compact-card">
         <div class="content-card-header">
             <div>
                 <h2>Triagem Inteligente</h2>
-                <p>Fluxo de triagem com IA em tempo real</p>
+                <p>Qualificação automatizada para acelerar o encaminhamento ao suporte.</p>
             </div>
 
             <span class="ai-pill">IA</span>
         </div>
 
-        <div class="ai-triage-grid">
-            <div class="ai-stat">
+        <div class="triage-summary">
+            <div>
                 <strong>{{ triagem_ia }}</strong>
-                <span>Em triagem</span>
+                <span>Em análise pela IA</span>
             </div>
 
-            <div class="ai-stat">
-                <strong>1</strong>
-                <span>Aguardando cliente</span>
+            <div>
+                <strong>{{ prontos_suporte }}</strong>
+                <span>Prontos para atuação humana</span>
             </div>
 
-            <div class="ai-stat">
-                <strong>24m</strong>
-                <span>Tempo médio de triagem</span>
-            </div>
-
-            <div class="ai-stat">
+            <div>
                 <strong>92%</strong>
-                <span>Precisão da IA</span>
+                <span>Confiança operacional</span>
             </div>
-        </div>
-
-        <div class="ai-visual" aria-hidden="true">
-            <div class="ai-chip">AI</div>
-            <span class="ai-node one"></span>
-            <span class="ai-node two"></span>
-            <span class="ai-node three"></span>
         </div>
 
         <a href="/triagem-inteligente" class="app-button-primary mt-3">
-            Acessar Triagem Inteligente
+            Acessar triagem
             <i data-lucide="arrow-right"></i>
         </a>
     </article>
 
-    <article class="chart-card">
+    <article class="content-card compact-card">
         <div class="content-card-header">
             <div>
-                <h2>Chamados por período</h2>
-                <p>Últimos registros disponíveis</p>
+                <h2>Prioridades do dia</h2>
+                <p>Pontos que merecem acompanhamento para manter a operação no prazo.</p>
             </div>
         </div>
 
-        <canvas data-chart-period></canvas>
-    </article>
+        <div class="attention-list">
+            {% if tipo_usuario in ["admin", "suporte"] %}
+                <a href="/admin?responsavel_id=sem_responsavel">
+                    <span>Sem responsável</span>
+                    <strong>{{ sem_responsavel|default(0) }}</strong>
+                </a>
 
-    <article class="chart-card">
-        <div class="content-card-header">
-            <div>
-                <h2>Chamados por status</h2>
-                <p>Distribuição operacional</p>
-            </div>
+                <a href="/admin?prioridade=Urgente">
+                    <span>Urgência extrema</span>
+                    <strong>{{ urgentes|default(0) }}</strong>
+                </a>
+
+                <a href="/admin">
+                    <span>Fora do prazo</span>
+                    <strong>{{ atrasados|default(0) }}</strong>
+                </a>
+            {% else %}
+                <a href="/meus_chamados">
+                    <span>Chamados em acompanhamento</span>
+                    <strong>{{ total|default(0) }}</strong>
+                </a>
+
+                <a href="/meus_chamados">
+                    <span>Em tratativa</span>
+                    <strong>{{ andamento|default(0) }}</strong>
+                </a>
+
+                <a href="/novo_chamado">
+                    <span>Nova solicitação</span>
+                    <strong>+</strong>
+                </a>
+            {% endif %}
         </div>
-
-        <canvas data-chart-status></canvas>
     </article>
 
 </section>
@@ -107,12 +123,12 @@
 <section class="table-card">
     <div class="table-card-header">
         <div>
-            <h2>Chamados recentes</h2>
-            <p class="text-muted mb-0">Últimas movimentações registradas no sistema.</p>
+            <h2>Solicitações recentes</h2>
+            <p class="text-muted mb-0">Últimas movimentações relevantes para acompanhamento rápido.</p>
         </div>
 
         {% if tipo_usuario in ["admin", "suporte"] %}
-            <a href="/admin" class="app-button-outline">Ver todos</a>
+            <a href="/admin" class="app-button-outline">Ver central</a>
         {% else %}
             <a href="/meus_chamados" class="app-button-outline">Ver meus chamados</a>
         {% endif %}
@@ -123,7 +139,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Título</th>
+                    <th>Assunto</th>
                     {% if tipo_usuario in ["admin", "suporte"] %}
                         <th>Solicitante</th>
                     {% endif %}
@@ -158,7 +174,7 @@
                 {% else %}
                     <tr>
                         <td colspan="{% if tipo_usuario in ['admin', 'suporte'] %}8{% else %}7{% endif %}" class="text-center text-muted py-4">
-                            Nenhum chamado encontrado.
+                            Nenhuma solicitação registrada até o momento.
                         </td>
                     </tr>
                 {% endfor %}

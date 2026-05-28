@@ -66,7 +66,10 @@ def painel_admin():
         status=status,
         prioridade=prioridade,
         responsavel_id=responsavel_id,
-        administradores=administradores
+        administradores=administradores,
+        page_title="Central de atendimento - Nortia",
+        page_heading="Central de atendimento",
+        page_subtitle="Controle a fila, priorize solicitações e direcione demandas para o suporte"
     )
 
 @admin.route("/admin/usuarios")
@@ -80,9 +83,9 @@ def usuarios_admin():
     return render_template(
         "usuarios_admin.html",
         usuarios=usuarios,
-        page_title="Usuários - Nortia",
-        page_heading="Usuários",
-        page_subtitle="Gerencie acessos internos da organização"
+        page_title="Gestão de acessos - Nortia",
+        page_heading="Gestão de acessos",
+        page_subtitle="Gerencie acessos, perfis e responsabilidades da operação"
     )
 
 
@@ -288,13 +291,16 @@ def meus_atendimentos():
     )
 
     return render_template(
-    "admin.html",
-    chamados=chamados,
-    status=status,
-    prioridade=prioridade,
-    responsavel_id="",
-    administradores=administradores
-)
+        "admin.html",
+        chamados=chamados,
+        status=status,
+        prioridade=prioridade,
+        responsavel_id="",
+        administradores=administradores,
+        page_title="Meus atendimentos - Nortia",
+        page_heading="Minha fila de atendimento",
+        page_subtitle="Acompanhe solicitações atribuídas à sua responsabilidade técnica"
+    )
 
 @admin.route(
     "/admin/chamado/<int:chamado_id>/assumir",
