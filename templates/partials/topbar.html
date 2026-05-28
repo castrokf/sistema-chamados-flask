@@ -17,9 +17,18 @@
 
     <div class="topbar-heading">
         <h1>{{ page_heading|default("Centro de controle") }}</h1>
-        <p>
-            {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ " — visão consolidada da operação") }}
-        </p>
+        {% if page_heading|default("Centro de controle") == "Centro de controle" %}
+            <p
+                data-dynamic-greeting
+                data-user-name="{{ session.get('usuario_nome', 'usuário') }}"
+            >
+                Bem-vindo, {{ session.get("usuario_nome", "usuário") }}.
+            </p>
+        {% else %}
+            <p>
+                {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ ".") }}
+            </p>
+        {% endif %}
     </div>
 
     <div class="topbar-tools">
@@ -34,14 +43,41 @@
             >
         </form>
 
-        <button
-            type="button"
-            class="notification-button"
-            aria-label="Notificações"
+        <div
+            class="notification-menu"
+            data-notification-menu
+            data-user-role="{{ session.get('usuario_tipo', 'cliente') }}"
         >
-            <i data-lucide="bell"></i>
-            <span></span>
-        </button>
+            <button
+                type="button"
+                class="notification-button"
+                data-notification-toggle
+                aria-label="Abrir notificações"
+                aria-expanded="false"
+            >
+                <i data-lucide="bell"></i>
+                <span data-notification-dot></span>
+            </button>
+
+            <div class="notification-dropdown" data-notification-dropdown>
+                <div class="notification-dropdown-header">
+                    <strong>Notificações</strong>
+                    <span>Resumo atualizado da operação</span>
+                </div>
+
+                <div class="notification-list" data-notification-list>
+                    <div class="notification-empty">Carregando notificações...</div>
+                </div>
+
+                <a
+                    href="{% if session.get('usuario_tipo') in ['admin', 'suporte'] %}/admin{% else %}/meus_chamados{% endif %}"
+                    class="notification-footer"
+                >
+                    Ver central de acompanhamento
+                    <i data-lucide="arrow-right"></i>
+                </a>
+            </div>
+        </div>
 
         <div class="profile-menu" data-profile-menu>
             <button

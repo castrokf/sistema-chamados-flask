@@ -208,6 +208,10 @@ body.app-body {
     font-weight: 700;
 }
 
+.notification-menu {
+    position: relative;
+}
+
 .notification-button {
     width: 46px;
     height: 46px;
@@ -215,6 +219,12 @@ body.app-body {
     border-radius: 14px;
     background: white;
     position: relative;
+}
+
+.notification-button:hover,
+.notification-menu.is-open .notification-button {
+    background: #f8fafc;
+    border-color: #9bded5;
 }
 
 .notification-button span {
@@ -225,6 +235,102 @@ body.app-body {
     height: 8px;
     background: #ef4444;
     border-radius: 50%;
+}
+
+.notification-button span.is-hidden {
+    display: none;
+}
+
+.notification-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 12px);
+    width: 332px;
+    padding: 12px;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-md);
+    display: none;
+    z-index: 45;
+}
+
+.notification-menu.is-open .notification-dropdown {
+    display: grid;
+    gap: 10px;
+}
+
+.notification-dropdown-header {
+    padding: 4px 4px 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.notification-dropdown-header strong,
+.notification-dropdown-header span {
+    display: block;
+}
+
+.notification-dropdown-header span,
+.notification-empty,
+.notification-item span {
+    color: var(--color-muted);
+    font-size: 0.84rem;
+}
+
+.notification-list {
+    display: grid;
+    gap: 8px;
+}
+
+.notification-item,
+.notification-footer {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    align-items: center;
+    color: var(--color-text);
+    text-decoration: none;
+    border-radius: 14px;
+    padding: 10px;
+}
+
+.notification-item {
+    border: 1px solid #edf2f7;
+    background: #fbfdff;
+}
+
+.notification-item:hover,
+.notification-footer:hover {
+    background: #f8fafc;
+}
+
+.notification-item-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #dffcf5;
+    color: var(--color-primary);
+}
+
+.notification-item strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.notification-footer {
+    grid-template-columns: 1fr 18px;
+    color: var(--color-primary-dark);
+    font-weight: 900;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0 0 12px 12px;
+}
+
+.notification-empty {
+    padding: 16px 10px;
+    text-align: center;
 }
 
 .avatar {
@@ -961,6 +1067,11 @@ body.app-body {
     .profile-dropdown {
         right: -2px;
         width: min(292px, calc(100vw - 32px));
+    }
+
+    .notification-dropdown {
+        right: -58px;
+        width: min(332px, calc(100vw - 32px));
     }
 }
 
