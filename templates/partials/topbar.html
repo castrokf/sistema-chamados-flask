@@ -1,3 +1,9 @@
+{% set role_labels = {
+    "admin": "Administrador",
+    "suporte": "Suporte",
+    "cliente": "Solicitante"
+} %}
+
 <header class="topbar">
 
     <button
@@ -10,40 +16,88 @@
     </button>
 
     <div class="topbar-heading">
-        <h1>{{ page_heading|default("Visão operacional") }}</h1>
+        <h1>{{ page_heading|default("Centro de controle") }}</h1>
         <p>
             {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ " — visão consolidada da operação") }}
         </p>
     </div>
 
-    <form action="/dashboard" method="GET" class="topbar-search" role="search">
-        <i data-lucide="search"></i>
-        <input
-            type="search"
-            name="q"
-            value="{{ request.args.get('q', '') }}"
-            placeholder="Buscar chamados, usuários ou IDs..."
-            aria-label="Buscar chamados, usuários ou IDs"
+    <div class="topbar-tools">
+        <form action="/dashboard" method="GET" class="topbar-search" role="search">
+            <i data-lucide="search"></i>
+            <input
+                type="search"
+                name="q"
+                value="{{ request.args.get('q', '') }}"
+                placeholder="Buscar chamados, usuários ou IDs..."
+                aria-label="Buscar chamados, usuários ou IDs"
+            >
+        </form>
+
+        <button
+            type="button"
+            class="notification-button"
+            aria-label="Notificações"
         >
-    </form>
+            <i data-lucide="bell"></i>
+            <span></span>
+        </button>
 
-    <button
-        type="button"
-        class="notification-button"
-        aria-label="Notificações"
-    >
-        <i data-lucide="bell"></i>
-        <span></span>
-    </button>
+        <div class="profile-menu" data-profile-menu>
+            <button
+                type="button"
+                class="topbar-user profile-trigger"
+                data-profile-toggle
+                aria-label="Abrir perfil corporativo"
+                aria-expanded="false"
+            >
+                <div class="avatar">
+                    {{ session.get("usuario_nome", "U")[0]|upper }}
+                </div>
 
-    <div class="topbar-user">
-        <div class="avatar">
-            {{ session.get("usuario_nome", "U")[0]|upper }}
-        </div>
+                <div>
+                    <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
+                    <span>{{ role_labels.get(session.get("usuario_tipo"), "Solicitante") }}</span>
+                </div>
 
-        <div>
-            <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
-            <span>{{ session.get("usuario_tipo", "cliente")|capitalize }}</span>
+                <i data-lucide="chevron-down"></i>
+            </button>
+
+            <div class="profile-dropdown" data-profile-dropdown>
+                <div class="profile-dropdown-header">
+                    <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
+                    <span>{{ role_labels.get(session.get("usuario_tipo"), "Solicitante") }} Nortia</span>
+                </div>
+
+                <a href="/perfil">
+                    <i data-lucide="user-round"></i>
+                    Perfil corporativo
+                </a>
+
+                <a href="/configuracoes">
+                    <i data-lucide="settings"></i>
+                    Configurações administrativas
+                </a>
+
+                {% if session.get("usuario_tipo") == "admin" %}
+                    <a href="/admin/usuarios">
+                        <i data-lucide="shield-check"></i>
+                        Gestão de acessos
+                    </a>
+                {% endif %}
+
+                {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+                    <a href="/admin">
+                        <i data-lucide="briefcase-business"></i>
+                        Central corporativa
+                    </a>
+                {% endif %}
+
+                <a href="/logout" class="profile-logout">
+                    <i data-lucide="log-out"></i>
+                    Sair com segurança
+                </a>
+            </div>
         </div>
     </div>
 

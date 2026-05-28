@@ -10,25 +10,6 @@
         <h2>Painel executivo</h2>
         <p>Visão objetiva da operação, com foco em prioridade, fila e tomada de decisão.</p>
     </div>
-
-    <div class="dashboard-actions">
-        <a href="/relatorios" class="app-button-outline">
-            <i data-lucide="bar-chart-3"></i>
-            Ver relatórios
-        </a>
-
-        {% if tipo_usuario in ["admin", "suporte"] %}
-            <a href="/admin" class="app-button-primary">
-                <i data-lucide="arrow-up-right"></i>
-                Abrir central
-            </a>
-        {% else %}
-            <a href="/novo_chamado" class="app-button-primary">
-                <i data-lucide="plus-circle"></i>
-                Nova solicitação
-            </a>
-        {% endif %}
-    </div>
 </div>
 
 <section class="metrics-grid dashboard-metrics">
@@ -36,44 +17,9 @@
     {{ metric_card("Abertos", abertos, "Aguardando primeira análise", "clock-3", "orange") }}
     {{ metric_card("Em atendimento", andamento, "Em tratativa pela equipe", "activity", "blue") }}
     {{ metric_card("Resolvidos", resolvidos, "Concluídos no ciclo atual", "check-circle-2", "green") }}
-    {{ metric_card("Triagem IA", triagem_ia, "Coleta e análise em andamento", "sparkles", "purple") }}
-    {{ metric_card("Prontos", prontos_suporte, "Liberados para atendimento humano", "badge-check", "teal") }}
 </section>
 
 <section class="dashboard-focus-grid">
-
-    <article class="content-card ai-triage-card compact-card">
-        <div class="content-card-header">
-            <div>
-                <h2>Triagem Inteligente</h2>
-                <p>Qualificação automatizada para acelerar o encaminhamento ao suporte.</p>
-            </div>
-
-            <span class="ai-pill">IA</span>
-        </div>
-
-        <div class="triage-summary">
-            <div>
-                <strong>{{ triagem_ia }}</strong>
-                <span>Em análise pela IA</span>
-            </div>
-
-            <div>
-                <strong>{{ prontos_suporte }}</strong>
-                <span>Prontos para atuação humana</span>
-            </div>
-
-            <div>
-                <strong>92%</strong>
-                <span>Confiança operacional</span>
-            </div>
-        </div>
-
-        <a href="/triagem-inteligente" class="app-button-primary mt-3">
-            Acessar triagem
-            <i data-lucide="arrow-right"></i>
-        </a>
-    </article>
 
     <article class="content-card compact-card">
         <div class="content-card-header">
@@ -116,6 +62,39 @@
                 </a>
             {% endif %}
         </div>
+    </article>
+
+    <article class="content-card ai-triage-card compact-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Triagem Inteligente</h2>
+                <p>Qualificação automatizada para acelerar o encaminhamento ao suporte.</p>
+            </div>
+
+            <span class="ai-pill">IA</span>
+        </div>
+
+        <div class="triage-summary">
+            <div>
+                <strong>{{ triagem_ia }}</strong>
+                <span>Em análise pela IA</span>
+            </div>
+
+            <div>
+                <strong>{{ prontos_suporte }}</strong>
+                <span>Prontos para atuação humana</span>
+            </div>
+
+            <div>
+                <strong>92%</strong>
+                <span>Confiança operacional</span>
+            </div>
+        </div>
+
+        <a href="/triagem-inteligente" class="app-button-primary mt-3">
+            Acessar triagem
+            <i data-lucide="arrow-right"></i>
+        </a>
     </article>
 
 </section>

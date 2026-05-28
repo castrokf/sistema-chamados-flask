@@ -223,8 +223,8 @@ def dashboard():
             nome=session["usuario_nome"],
             tipo_usuario=usuario_tipo,
             page_title="Dashboard - Nortia",
-            page_heading="Visão operacional",
-            page_subtitle=f"Bem-vindo, {session['usuario_nome']} — visão consolidada da operação de atendimento",
+            page_heading="Centro de controle",
+            page_subtitle=f"Bem-vindo, {session['usuario_nome']} — governança dos atendimentos corporativos",
             total=total,
             abertos=abertos,
             andamento=andamento,
@@ -293,7 +293,7 @@ def dashboard():
         nome=session["usuario_nome"],
         tipo_usuario=usuario_tipo,
         page_title="Dashboard - Nortia",
-        page_heading="Visão operacional",
+        page_heading="Centro de controle",
         page_subtitle=f"Bem-vindo, {session['usuario_nome']} — acompanhe solicitações, prazos e interações com a equipe",
         total=total,
         abertos=abertos,
@@ -881,6 +881,22 @@ def configuracoes():
         page_title="Configurações - Nortia",
         page_heading="Configurações",
         page_subtitle="Parâmetros operacionais, integrações e preparação para automações"
+    )
+
+
+@chamados.route("/perfil")
+@login_required
+def perfil():
+    usuario = buscar_usuario_por_id(
+        session["usuario_id"]
+    )
+
+    return render_template(
+        "perfil.html",
+        usuario=usuario,
+        page_title="Perfil corporativo - Nortia",
+        page_heading="Perfil corporativo",
+        page_subtitle="Dados do usuário, perfil de acesso e atalhos administrativos"
     )
 
 

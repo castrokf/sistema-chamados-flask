@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% set role_labels = {
+    "admin": "Administrador",
+    "suporte": "Suporte",
+    "cliente": "Solicitante"
+} %}
+
+<div class="dashboard-header">
+    <div>
+        <h2>Perfil corporativo</h2>
+        <p>Centralize dados do usuário, permissões e atalhos de administração da conta Nortia.</p>
+    </div>
+</div>
+
+<section class="content-grid profile-layout">
+    <article class="content-card profile-card">
+        <div class="profile-hero">
+            <div class="avatar avatar-lg">
+                {{ session.get("usuario_nome", "U")[0]|upper }}
+            </div>
+
+            <div>
+                <h2>{{ usuario.nome if usuario else session.get("usuario_nome", "Usuário") }}</h2>
+                <p>{{ usuario.email if usuario else "Email não disponível" }}</p>
+            </div>
+        </div>
+
+        <div class="insight-list">
+            <div>
+                <strong>Perfil de acesso</strong>
+                <span>{{ role_labels.get(session.get("usuario_tipo"), "Solicitante") }}</span>
+            </div>
+
+            <div>
+                <strong>Organização</strong>
+                <span>Ambiente corporativo Nortia</span>
+            </div>
+
+            <div>
+                <strong>Segurança</strong>
+                <span>Autenticação protegida e sessão individual ativa.</span>
+            </div>
+        </div>
+    </article>
+
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Administração da conta</h2>
+                <p>Acesse recursos compatíveis com seu perfil dentro da empresa.</p>
+            </div>
+        </div>
+
+        <div class="attention-list">
+            <a href="/configuracoes">
+                <span>Configurações corporativas</span>
+                <strong><i data-lucide="settings"></i></strong>
+            </a>
+
+            {% if session.get("usuario_tipo") == "admin" %}
+                <a href="/admin/usuarios">
+                    <span>Gestão de acessos</span>
+                    <strong><i data-lucide="shield-check"></i></strong>
+                </a>
+            {% endif %}
+
+            {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+                <a href="/admin">
+                    <span>Central corporativa</span>
+                    <strong><i data-lucide="briefcase-business"></i></strong>
+                </a>
+            {% else %}
+                <a href="/meus_chamados">
+                    <span>Minhas solicitações</span>
+                    <strong><i data-lucide="inbox"></i></strong>
+                </a>
+            {% endif %}
+
+            <a href="/logout">
+                <span>Sair com segurança</span>
+                <strong><i data-lucide="log-out"></i></strong>
+            </a>
+        </div>
+    </article>
+</section>
+
+{% endblock %}

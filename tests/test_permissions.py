@@ -69,6 +69,20 @@ def test_suporte_acessa_meus_atendimentos(client, login):
     assert "Minha fila de atendimento" in resposta.get_data(as_text=True)
 
 
+def test_usuario_acessa_perfil_corporativo(client, login):
+    login(
+        nome="Marina Alves",
+        email="marina@teste.com",
+        tipo="suporte",
+    )
+
+    resposta = client.get("/perfil")
+
+    assert resposta.status_code == 200
+    assert "Perfil corporativo" in resposta.get_data(as_text=True)
+    assert "Marina Alves" in resposta.get_data(as_text=True)
+
+
 def test_admin_cria_acesso_interno(client, login, db_module, csrf_token):
     login(
         nome="Admin Teste",
