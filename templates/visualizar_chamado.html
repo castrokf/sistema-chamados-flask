@@ -1,533 +1,207 @@
 {% extends "base.html" %}
+{% from "partials/status_badge.html" import status_badge %}
+{% from "partials/priority_badge.html" import priority_badge %}
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
-    <div>
-
-        <h1 class="fw-bold">
-            Chamado CH-{{ "%04d"|format(chamado.id) }}
-        </h1>
-
-        <p class="text-muted">
-            Detalhes, histórico e tratativa do atendimento.
-        </p>
-
-    </div>
-
-    {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
-
-        <a
-            href="/admin"
-            class="btn btn-outline-dark"
-        >
-            Voltar
-        </a>
-
-    {% else %}
-
-        <a
-            href="/meus_chamados"
-            class="btn btn-outline-dark"
-        >
-            Voltar
-        </a>
-
-    {% endif %}
-
-</div>
-
-
-<div class="card shadow-sm border-0 mb-4">
-
-    <div class="card-body">
-
-        <div class="row">
-
-            <div class="col-md-8">
-
-                <h3 class="fw-bold mb-3">
-                    {{ chamado.titulo }}
-                </h3>
-
-                <p class="text-muted">
-                    {{ chamado.descricao }}
-                </p>
-
-            </div>
-
-            <div class="col-md-4">
-
-                <div class="mb-3">
-
-                    <strong>Status:</strong>
-
-                    <br>
-
-                    {% if chamado.status == "Aberto" %}
-
-                        <span class="badge bg-danger">
-                            Aberto
-                        </span>
-
-                    {% elif chamado.status == "Em andamento" %}
-
-                        <span class="badge bg-warning text-dark">
-                            Em andamento
-                        </span>
-
-                    {% elif chamado.status == "Resolvido" %}
-
-                        <span class="badge bg-success">
-                            Resolvido
-                        </span>
-
-                    {% elif chamado.status == "Encerrado" %}
-
-                        <span class="badge bg-secondary">
-                            Encerrado
-                        </span>
-
-                    {% else %}
-
-                        <span class="badge bg-secondary">
-                            {{ chamado.status }}
-                        </span>
-
-                    {% endif %}
-
-                </div>
-
-                <div class="mb-3">
-
-                    <strong>Prioridade:</strong>
-
-                    <br>
-
-                    {% if chamado.prioridade == "Urgente" %}
-
-                        <span class="badge bg-dark">
-                            Urgente
-                        </span>
-
-                    {% elif chamado.prioridade == "Alta" %}
-
-                        <span class="badge bg-danger">
-                            Alta
-                        </span>
-
-                    {% elif chamado.prioridade == "Média" %}
-
-                        <span class="badge bg-warning text-dark">
-                            Média
-                        </span>
-
-                    {% else %}
-
-                        <span class="badge bg-primary">
-                            Baixa
-                        </span>
-
-                    {% endif %}
-
-                </div>
-
-                <div class="mb-3">
-
-                    <strong>Data de abertura:</strong>
-
-                    <br>
-
-                    {{ chamado.data_criacao }}
-
-                </div>
-
-                <div class="mb-3">
-
-                    <strong>Prazo de atendimento:</strong>
-
-                    <br>
-
-                    {% if chamado.data_limite %}
-
-                        {{ chamado.data_limite }}
-
-                    {% else %}
-
-                        <span class="text-muted">
-                            Não definido
-                        </span>
-
-                    {% endif %}
-
-                </div>
-
-                <div class="mb-3">
-
-                    <strong>Responsável:</strong>
-
-                    <br>
-
-                    {% if responsavel %}
-
-                        <span class="badge bg-dark mt-2">
-                            {{ responsavel }}
-                        </span>
-
-                    {% else %}
-
-                        <span class="text-muted d-inline-block mt-2">
-                            Ainda não atribuído
-                        </span>
-
-                    {% endif %}
-
-                    {% if session.get("usuario_tipo") == "suporte" %}
-
-                        <form
-                            method="POST"
-                            action="/admin/chamado/{{ chamado.id }}/assumir"
-                            class="mt-2"
-                        >
-                            <input
-                                type="hidden"
-                                name="csrf_token"
-                                value="{{ csrf_token() }}"
-                            >
-
-                            <button
-                                type="submit"
-                                class="btn btn-sm btn-outline-primary"
-                            >
-                                Assumir atendimento
-                            </button>
-
-                        </form>
-
-                    {% endif %}
-
-                </div>
-
-            </div>
-
+<section class="content-card mb-3">
+    <div class="content-card-header">
+        <div>
+            <h2>CH-{{ "%04d"|format(chamado.id) }} · {{ chamado.titulo }}</h2>
+            <p>{{ chamado.descricao }}</p>
         </div>
 
+        <div class="d-flex gap-2 flex-wrap">
+            {{ status_badge(chamado.status) }}
+            {{ priority_badge(chamado.prioridade) }}
+        </div>
     </div>
 
-</div>
-
-
-<div class="card shadow-sm border-0 mb-4">
-
-    <div class="card-body">
-
-        <h4 class="mb-4">
-            Resposta do suporte
-        </h4>
-
-        {% if chamado.resposta %}
-
-            <div class="alert alert-light border">
-                {{ chamado.resposta }}
-            </div>
-
-        {% else %}
-
-            <div class="alert alert-secondary">
-                Nenhuma resposta até o momento.
-            </div>
-
+    <div class="detail-tabs">
+        <span class="detail-tab active">Resumo</span>
+        <span class="detail-tab">Tratativa</span>
+        <span class="detail-tab">IA</span>
+        <span class="detail-tab">Anexos</span>
+        <span class="detail-tab">Histórico</span>
+        {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+            <span class="detail-tab">Notas internas</span>
         {% endif %}
-
     </div>
 
-</div>
-
-
-<div class="card shadow-sm border-0 mb-4">
-
-    <div class="card-body">
-
-        <h4 class="mb-4">
-            Anexos
-        </h4>
-
-        {% for anexo in anexos %}
-
-            <div class="d-flex justify-content-between align-items-center border rounded p-3 mb-3">
-
-                <div>
-
-                    <strong>
-                        {{ anexo.nome_arquivo }}
-                    </strong>
-
-                    <br>
-
-                    <small class="text-muted">
-                        Enviado em {{ anexo.data_envio }}
-                    </small>
-
-                </div>
-
-                <a
-                    href="/anexo/{{ anexo.id }}"
-                    target="_blank"
-                    class="btn btn-sm btn-outline-primary"
-                >
-                    Abrir arquivo
-                </a>
-
+    <div class="metrics-grid">
+        <article class="metric-card metric-teal">
+            <div class="metric-icon"><i data-lucide="calendar-clock"></i></div>
+            <div>
+                <span>SLA</span>
+                <strong>{{ chamado.data_limite or "-" }}</strong>
+                <p>Prazo de atendimento</p>
             </div>
+        </article>
 
-        {% else %}
-
-            <div class="alert alert-secondary mb-0">
-                Nenhum anexo enviado.
+        <article class="metric-card metric-blue">
+            <div class="metric-icon"><i data-lucide="user-round"></i></div>
+            <div>
+                <span>Responsável</span>
+                <strong>{{ responsavel or "Não atribuído" }}</strong>
+                <p>Suporte atual</p>
             </div>
+        </article>
 
-        {% endfor %}
-
+        <article class="metric-card metric-purple">
+            <div class="metric-icon"><i data-lucide="sparkles"></i></div>
+            <div>
+                <span>Prioridade IA</span>
+                <strong>{{ chamado.ai_suggested_priority or chamado.prioridade }}</strong>
+                <p>{{ chamado.ai_suggested_category or "Categoria pendente" }}</p>
+            </div>
+        </article>
     </div>
+</section>
 
-</div>
+<section class="content-grid">
 
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Resumo</h2>
+                <p>Informações principais do chamado.</p>
+            </div>
+        </div>
 
-<div class="card shadow-sm border-0 mb-4">
+        <p><strong>Solicitante:</strong> {{ chamado.usuario_id }}</p>
+        <p><strong>Data:</strong> {{ chamado.data_criacao }}</p>
+        <p><strong>Resumo gerado pela IA:</strong></p>
+        <div class="empty-state text-start">
+            {{ chamado.ai_summary or "Resumo ainda não gerado." }}
+        </div>
 
-    <div class="card-body">
+        {% if session.get("usuario_tipo") == "suporte" %}
+            <form method="POST" action="/admin/chamado/{{ chamado.id }}/assumir" class="mt-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="app-button-primary">
+                    <i data-lucide="user-check"></i>
+                    Assumir chamado
+                </button>
+            </form>
+        {% endif %}
+    </article>
 
-        <h4 class="mb-4">
-            Comentários
-        </h4>
+    <article class="content-card" data-ticket-chat="{{ chamado.id }}">
+        <div class="content-card-header">
+            <div>
+                <h2>Tratativa</h2>
+                <p>Chat do chamado com cliente, suporte e Assistente Nortia.</p>
+            </div>
+        </div>
 
-        {% for comentario in comentarios %}
-
-            <div class="border rounded p-3 mb-3 bg-light">
-
-                <div class="d-flex justify-content-between">
-
-                    <strong>
-                        {{ comentario.usuario_nome }}
-                    </strong>
-
-                    <small class="text-muted">
-                        {{ comentario.data }}
-                    </small>
-
+        <div class="chat-shell" data-chat-list>
+            {% for mensagem in mensagens %}
+                <div class="chat-message {{ mensagem.sender_type }}">
+                    <small>{{ mensagem.sender_name or mensagem.sender_type }} · {{ mensagem.created_at }}</small>
+                    <div>{{ mensagem.message }}</div>
                 </div>
+            {% else %}
+                <div class="empty-state">Nenhuma mensagem registrada.</div>
+            {% endfor %}
+        </div>
 
-                <span class="badge bg-secondary mb-2">
-                    {{ comentario.usuario_tipo }}
-                </span>
+        {% if chamado.status != "Encerrado" %}
+            <form class="mt-3" data-chat-form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <textarea name="message" class="form-control mb-2" rows="3" placeholder="Escreva uma mensagem..." required></textarea>
+                <button type="submit" class="app-button-primary">Enviar mensagem</button>
+            </form>
+        {% endif %}
+    </article>
 
-                <p class="mb-0">
-                    {{ comentario.mensagem }}
-                </p>
-
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>IA</h2>
+                <p>Perguntas, categoria e confiança da triagem.</p>
             </div>
+            <span class="ai-pill">IA</span>
+        </div>
 
-        {% else %}
-
-            <div class="alert alert-secondary">
-                Nenhum comentário ainda.
-            </div>
-
-        {% endfor %}
+        <p><strong>Categoria sugerida:</strong> {{ chamado.ai_suggested_category or "-" }}</p>
+        <p><strong>Prioridade sugerida:</strong> {{ chamado.ai_suggested_priority or "-" }}</p>
+        <p><strong>Confiança:</strong> {{ chamado.ai_confidence or 0 }}%</p>
 
         <hr>
 
-        {% if chamado.status != "Encerrado" %}
-
-            <form method="POST">
-                <input
-                    type="hidden"
-                    name="csrf_token"
-                    value="{{ csrf_token() }}"
-                >
-
-                <input
-                    type="hidden"
-                    name="acao"
-                    value="comentario"
-                >
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        Novo comentário
-                    </label>
-
-                    <textarea
-                        name="mensagem"
-                        class="form-control"
-                        rows="4"
-                        required
-                    ></textarea>
-
-                </div>
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    Enviar comentário
-                </button>
-
-            </form>
-
-        {% else %}
-
-            <div class="alert alert-warning">
-                Este chamado está encerrado e não aceita novos comentários.
+        {% for pergunta in perguntas_ia %}
+            <div class="ai-stat mb-2">
+                <span>{{ pergunta }}</span>
             </div>
+        {% endfor %}
+    </article>
 
-        {% endif %}
+</section>
 
-    </div>
+<section class="content-grid mt-3">
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Anexos</h2>
+                <p>Arquivos enviados no chamado.</p>
+            </div>
+        </div>
 
-</div>
+        {% for anexo in anexos %}
+            <div class="d-flex justify-content-between align-items-center border rounded p-3 mb-2">
+                <strong>{{ anexo.nome_arquivo }}</strong>
+                <a href="/anexo/{{ anexo.id }}" target="_blank" class="app-button-outline">Abrir</a>
+            </div>
+        {% else %}
+            <div class="empty-state">Nenhum anexo enviado.</div>
+        {% endfor %}
+    </article>
 
-
-<div class="card shadow-sm border-0 mb-4">
-
-    <div class="card-body">
-
-        <h4 class="mb-4">
-            Histórico
-        </h4>
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Histórico</h2>
+                <p>Movimentações do atendimento.</p>
+            </div>
+        </div>
 
         {% for item in historico %}
-
-            <div class="border-start border-4 ps-3 mb-4">
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <div>
-
-                        <h6 class="fw-bold mb-1">
-                            {{ item.mensagem }}
-                        </h6>
-
-                        {% if item.usuario_nome %}
-
-                            <small class="text-muted">
-                                {{ item.usuario_nome }} — {{ item.usuario_tipo }}
-                            </small>
-
-                        {% else %}
-
-                            <small class="text-muted">
-                                Sistema
-                            </small>
-
-                        {% endif %}
-
-                    </div>
-
-                    <small class="text-muted">
-                        {{ item.data }}
-                    </small>
-
-                </div>
-
+            <div class="border-start border-4 ps-3 mb-3">
+                <strong>{{ item.mensagem }}</strong>
+                <small class="d-block text-muted">{{ item.data }}</small>
             </div>
-
         {% else %}
-
-            <div class="alert alert-secondary">
-                Nenhum histórico registrado.
-            </div>
-
+            <div class="empty-state">Nenhum histórico registrado.</div>
         {% endfor %}
+    </article>
 
-    </div>
-
-</div>
-
-
-{% if session.get("usuario_tipo") in ["admin", "suporte"] %}
-
-<div class="card shadow-sm border-0">
-
-    <div class="card-body">
-
-        <h4 class="mb-4">
-            Atualização do atendimento
-        </h4>
-
-        <form method="POST">
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-            >
-
-            <input
-                type="hidden"
-                name="acao"
-                value="atualizar_chamado"
-            >
-
-            <div class="mb-3">
-
-                <label class="form-label">
-                    Resposta
-                </label>
-
-                <textarea
-                    name="resposta"
-                    class="form-control"
-                    rows="6"
-                >{{ chamado.resposta }}</textarea>
-
+    {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+        <article class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h2>Atualização do atendimento</h2>
+                    <p>Resposta, status e tratativa humana.</p>
+                </div>
             </div>
 
-            <div class="mb-4">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="acao" value="atualizar_chamado">
 
-                <label class="form-label">
-                    Status
-                </label>
+                <label class="form-label">Resposta</label>
+                <textarea name="resposta" class="form-control mb-3" rows="5">{{ chamado.resposta }}</textarea>
 
-                <select
-                    name="status"
-                    class="form-select"
-                >
-
-                    <option value="Aberto" {% if chamado.status == "Aberto" %}selected{% endif %}>
-                        Aberto
-                    </option>
-
-                    <option value="Em andamento" {% if chamado.status == "Em andamento" %}selected{% endif %}>
-                        Em andamento
-                    </option>
-
-                    <option value="Resolvido" {% if chamado.status == "Resolvido" %}selected{% endif %}>
-                        Resolvido
-                    </option>
-
-                    <option value="Encerrado" {% if chamado.status == "Encerrado" %}selected{% endif %}>
-                        Encerrado
-                    </option>
-
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select mb-3">
+                    {% for status in ["Aberto", "Em triagem pela IA", "Aguardando informações do cliente", "Pronto para suporte", "Em andamento", "Aguardando cliente", "Resolvido", "Encerrado", "Reaberto"] %}
+                        <option value="{{ status }}" {% if chamado.status == status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
                 </select>
 
-            </div>
-
-            <button
-                type="submit"
-                class="btn btn-success"
-            >
-                Salvar atualização
-            </button>
-
-        </form>
-
-    </div>
-
-</div>
-
-{% endif %}
+                <button type="submit" class="app-button-primary">Salvar atualização</button>
+            </form>
+        </article>
+    {% endif %}
+</section>
 
 {% endblock %}

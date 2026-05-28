@@ -1,0 +1,129 @@
+{% set tipo = session.get("usuario_tipo") %}
+{% set path = request.path %}
+
+<aside class="app-sidebar" data-sidebar>
+
+    <div class="sidebar-brand">
+        <div class="brand-icon">
+            <img
+                src="{{ url_for('static', filename='img/logo.svg') }}"
+                alt="Logo Nortia"
+            >
+        </div>
+
+        <div>
+            <strong>Nortia</strong>
+            <span>Gestão de atendimento</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Navegação principal">
+
+        <a
+            href="/dashboard"
+            class="sidebar-link {% if path == '/dashboard' %}sidebar-link-active{% endif %}"
+        >
+            <i data-lucide="layout-dashboard"></i>
+            <span>Visão geral</span>
+        </a>
+
+        {% if tipo == "cliente" %}
+
+            <a
+                href="/meus_chamados"
+                class="sidebar-link {% if path == '/meus_chamados' %}sidebar-link-active{% endif %}"
+            >
+                <i data-lucide="inbox"></i>
+                <span>Meus chamados</span>
+            </a>
+
+            <a
+                href="/novo_chamado"
+                class="sidebar-link {% if path == '/novo_chamado' %}sidebar-link-active{% endif %}"
+            >
+                <i data-lucide="plus-circle"></i>
+                <span>Novo chamado</span>
+            </a>
+
+        {% else %}
+
+            <a
+                href="/admin"
+                class="sidebar-link {% if path == '/admin' %}sidebar-link-active{% endif %}"
+            >
+                <i data-lucide="kanban-square"></i>
+                <span>Central</span>
+            </a>
+
+            {% if tipo == "suporte" %}
+
+                <a
+                    href="/admin/meus-atendimentos"
+                    class="sidebar-link {% if path == '/admin/meus-atendimentos' %}sidebar-link-active{% endif %}"
+                >
+                    <i data-lucide="headphones"></i>
+                    <span>Meus atendimentos</span>
+                </a>
+
+            {% endif %}
+
+        {% endif %}
+
+        <a
+            href="/triagem-inteligente"
+            class="sidebar-link {% if path.startswith('/triagem-inteligente') %}sidebar-link-active{% endif %}"
+        >
+            <i data-lucide="sparkles"></i>
+            <span>Triagem Inteligente</span>
+            <small>IA</small>
+        </a>
+
+        <a
+            href="/relatorios"
+            class="sidebar-link {% if path.startswith('/relatorios') %}sidebar-link-active{% endif %}"
+        >
+            <i data-lucide="bar-chart-3"></i>
+            <span>Relatórios</span>
+        </a>
+
+        {% if tipo == "admin" %}
+
+            <a
+                href="/admin/usuarios"
+                class="sidebar-link {% if path.startswith('/admin/usuarios') %}sidebar-link-active{% endif %}"
+            >
+                <i data-lucide="users"></i>
+                <span>Usuários</span>
+            </a>
+
+        {% endif %}
+
+        <a
+            href="/configuracoes"
+            class="sidebar-link {% if path.startswith('/configuracoes') %}sidebar-link-active{% endif %}"
+        >
+            <i data-lucide="settings"></i>
+            <span>Configurações</span>
+        </a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ session.get("usuario_nome", "U")[0]|upper }}
+            </div>
+
+            <div>
+                <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
+                <span>{{ tipo|default("cliente")|capitalize }}</span>
+            </div>
+        </div>
+
+        <a href="/logout" class="logout-link">
+            <i data-lucide="log-out"></i>
+            <span>Sair</span>
+        </a>
+    </div>
+
+</aside>

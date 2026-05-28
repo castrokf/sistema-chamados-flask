@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "partials/status_badge.html" import status_badge %}
+{% from "partials/priority_badge.html" import priority_badge %}
+
+{% block content %}
+
+<section class="metrics-grid">
+    <article class="metric-card metric-purple">
+        <div class="metric-icon"><i data-lucide="sparkles"></i></div>
+        <div>
+            <span>Em triagem</span>
+            <strong>{{ chamados|selectattr("status", "equalto", "Em triagem pela IA")|list|length }}</strong>
+            <p>Analisando com IA</p>
+        </div>
+    </article>
+
+    <article class="metric-card metric-orange">
+        <div class="metric-icon"><i data-lucide="message-circle-question"></i></div>
+        <div>
+            <span>Aguardando cliente</span>
+            <strong>{{ chamados|selectattr("status", "equalto", "Aguardando informações do cliente")|list|length }}</strong>
+            <p>Coleta pendente</p>
+        </div>
+    </article>
+
+    <article class="metric-card metric-teal">
+        <div class="metric-icon"><i data-lucide="badge-check"></i></div>
+        <div>
+            <span>Pronto suporte</span>
+            <strong>{{ chamados|selectattr("status", "equalto", "Pronto para suporte")|list|length }}</strong>
+            <p>Aguardando atribuição</p>
+        </div>
+    </article>
+</section>
+
+<section class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h2>Fila de Triagem Inteligente</h2>
+            <p class="text-muted mb-0">Chamados em análise, aguardando cliente ou prontos para suporte.</p>
+        </div>
+
+        <form method="GET" class="d-flex gap-2">
+            <select name="status" class="form-select">
+                <option value="">Todos</option>
+                {% for item in status_ia %}
+                    <option value="{{ item }}" {% if status == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+            <button class="app-button-primary" type="submit">Filtrar</button>
+        </form>
+    </div>
+
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Status</th>
+                    <th>Prioridade IA</th>
+                    <th>Resumo IA</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for chamado in chamados %}
+                    <tr>
+                        <td>CH-{{ "%04d"|format(chamado.id) }}</td>
+                        <td>{{ chamado.titulo }}</td>
+                        <td>{{ status_badge(chamado.status) }}</td>
+                        <td>{{ priority_badge(chamado.ai_suggested_priority or chamado.prioridade) }}</td>
+                        <td>{{ "Disponível" if chamado.ai_summary else "Pendente" }}</td>
+                        <td><a href="/chamado/{{ chamado.id }}" class="app-button-outline">Abrir</a></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Nenhum chamado em triagem.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}

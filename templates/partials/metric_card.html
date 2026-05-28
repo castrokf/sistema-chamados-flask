@@ -1,0 +1,13 @@
+{% macro metric_card(label, value, text, icon, tone="teal") %}
+    <article class="metric-card metric-{{ tone }}">
+        <div class="metric-icon">
+            <i data-lucide="{{ icon }}"></i>
+        </div>
+
+        <div>
+            <span>{{ label }}</span>
+            <strong>{{ value }}</strong>
+            <p>{{ text }}</p>
+        </div>
+    </article>
+{% endmacro %}

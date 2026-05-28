@@ -548,7 +548,14 @@ def criar_tabela_chamados():
         resposta TEXT,
         data_criacao TEXT NOT NULL,
         data_limite TEXT,
-        responsavel_id INTEGER
+        responsavel_id INTEGER,
+        ai_summary TEXT,
+        ai_suggested_category TEXT,
+        ai_suggested_priority TEXT,
+        ai_confidence INTEGER DEFAULT 0,
+        ai_status TEXT,
+        triage_started_at TEXT,
+        triage_finished_at TEXT
     )
     """)
 
@@ -578,7 +585,15 @@ def criar_chamado(
     usuario_id,
     data_criacao,
     data_limite,
-    organizacao_id=None
+    organizacao_id=None,
+    status_inicial="Aberto",
+    ai_summary="",
+    ai_suggested_category="",
+    ai_suggested_priority="",
+    ai_confidence=0,
+    ai_status="pendente",
+    triage_started_at=None,
+    triage_finished_at=None
 ):
     if organizacao_id is None:
         usuario = buscar_usuario_por_id(usuario_id)
@@ -594,27 +609,49 @@ def criar_chamado(
         usuario_id,
         resposta,
         data_criacao,
-        data_limite
+        data_limite,
+        ai_summary,
+        ai_suggested_category,
+        ai_suggested_priority,
+        ai_confidence,
+        ai_status,
+        triage_started_at,
+        triage_finished_at
     )
     VALUES (
         :organizacao_id,
         :titulo,
         :descricao,
-        'Aberto',
+        :status,
         :prioridade,
         :usuario_id,
         '',
         :data_criacao,
-        :data_limite
+        :data_limite,
+        :ai_summary,
+        :ai_suggested_category,
+        :ai_suggested_priority,
+        :ai_confidence,
+        :ai_status,
+        :triage_started_at,
+        :triage_finished_at
     )
     """, {
         "organizacao_id": organizacao_id,
         "titulo": titulo,
         "descricao": descricao,
+        "status": status_inicial,
         "prioridade": prioridade,
         "usuario_id": usuario_id,
         "data_criacao": data_criacao,
-        "data_limite": data_limite
+        "data_limite": data_limite,
+        "ai_summary": ai_summary,
+        "ai_suggested_category": ai_suggested_category,
+        "ai_suggested_priority": ai_suggested_priority,
+        "ai_confidence": ai_confidence,
+        "ai_status": ai_status,
+        "triage_started_at": triage_started_at,
+        "triage_finished_at": triage_finished_at
     })
 
 
@@ -840,6 +877,82 @@ def listar_comentarios(chamado_id):
     })
 
 
+def criar_tabela_mensagens_chamado():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS ticket_messages (
+        id {id_sql()},
+        ticket_id INTEGER NOT NULL,
+        sender_id INTEGER,
+        sender_type TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_internal INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL
+    )
+    """)
+
+
+def adicionar_mensagem_chamado(
+    ticket_id,
+    sender_id,
+    sender_type,
+    message,
+    created_at,
+    is_internal=0
+):
+    return inserir_e_retornar_id("""
+    INSERT INTO ticket_messages (
+        ticket_id,
+        sender_id,
+        sender_type,
+        message,
+        is_internal,
+        created_at
+    )
+    VALUES (
+        :ticket_id,
+        :sender_id,
+        :sender_type,
+        :message,
+        :is_internal,
+        :created_at
+    )
+    """, {
+        "ticket_id": ticket_id,
+        "sender_id": sender_id,
+        "sender_type": sender_type,
+        "message": message,
+        "is_internal": 1 if is_internal else 0,
+        "created_at": created_at
+    })
+
+
+def listar_mensagens_chamado(ticket_id, incluir_internas=False):
+    filtro_interno = ""
+
+    if not incluir_internas:
+        filtro_interno = "AND ticket_messages.is_internal = 0"
+
+    return consultar_lista(f"""
+    SELECT
+        ticket_messages.id AS id,
+        ticket_messages.ticket_id AS ticket_id,
+        ticket_messages.sender_id AS sender_id,
+        ticket_messages.sender_type AS sender_type,
+        ticket_messages.message AS message,
+        ticket_messages.is_internal AS is_internal,
+        ticket_messages.created_at AS created_at,
+        usuarios.nome AS sender_name
+    FROM ticket_messages
+    LEFT JOIN usuarios
+        ON ticket_messages.sender_id = usuarios.id
+    WHERE ticket_messages.ticket_id = :ticket_id
+    {filtro_interno}
+    ORDER BY ticket_messages.id ASC
+    """, {
+        "ticket_id": ticket_id
+    })
+
+
 def contar_todos_chamados(organizacao_id=None):
     parametros = {}
     filtro_org = ""
@@ -891,6 +1004,28 @@ def contar_todos_chamados_prioridade(prioridade, organizacao_id=None):
     """, parametros) or 0
 
 
+def contar_chamados_periodo(organizacao_id=None, limite=7):
+    parametros = {
+        "limite": limite
+    }
+    filtro_org = ""
+
+    if organizacao_id is not None:
+        filtro_org = "WHERE organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
+
+    return consultar_lista(f"""
+    SELECT
+        substr(data_criacao, 1, 10) AS dia,
+        COUNT(*) AS total
+    FROM chamados
+    {filtro_org}
+    GROUP BY substr(data_criacao, 1, 10)
+    ORDER BY dia DESC
+    LIMIT :limite
+    """, parametros)
+
+
 def listar_chamados_recentes_usuario(usuario_id):
     return consultar_lista("""
     SELECT
@@ -898,7 +1033,8 @@ def listar_chamados_recentes_usuario(usuario_id):
         titulo,
         status,
         prioridade,
-        data_criacao
+        data_criacao,
+        data_limite
     FROM chamados
     WHERE usuario_id = :usuario_id
     ORDER BY id DESC
@@ -923,7 +1059,8 @@ def listar_chamados_recentes_admin(organizacao_id=None):
         chamados.status AS status,
         chamados.prioridade AS prioridade,
         usuarios.nome AS usuario_nome,
-        chamados.data_criacao AS data_criacao
+        chamados.data_criacao AS data_criacao,
+        chamados.data_limite AS data_limite
     FROM chamados
     INNER JOIN usuarios
         ON chamados.usuario_id = usuarios.id
@@ -974,6 +1111,11 @@ def listar_chamados_admin(
         usuarios.nome AS usuario_nome,
         chamados.data_criacao AS data_criacao,
         chamados.data_limite AS data_limite,
+        chamados.ai_summary AS ai_summary,
+        chamados.ai_suggested_category AS ai_suggested_category,
+        chamados.ai_suggested_priority AS ai_suggested_priority,
+        chamados.ai_confidence AS ai_confidence,
+        chamados.ai_status AS ai_status,
         CASE
             WHEN chamados.data_limite IS NOT NULL
             AND chamados.data_limite < :agora
@@ -1123,6 +1265,25 @@ def adicionar_coluna_responsavel_chamado():
     )
 
 
+def adicionar_colunas_ia_chamados():
+    colunas = [
+        ("ai_summary", "TEXT"),
+        ("ai_suggested_category", "TEXT"),
+        ("ai_suggested_priority", "TEXT"),
+        ("ai_confidence", "INTEGER DEFAULT 0"),
+        ("ai_status", "TEXT"),
+        ("triage_started_at", "TEXT"),
+        ("triage_finished_at", "TEXT")
+    ]
+
+    for coluna, definicao in colunas:
+        adicionar_coluna(
+            "chamados",
+            coluna,
+            definicao
+        )
+
+
 def listar_administradores(organizacao_id=None):
     parametros = {}
     filtro_org = ""
@@ -1226,6 +1387,11 @@ def listar_chamados_responsavel(
         usuarios.nome AS usuario_nome,
         chamados.data_criacao AS data_criacao,
         chamados.data_limite AS data_limite,
+        chamados.ai_summary AS ai_summary,
+        chamados.ai_suggested_category AS ai_suggested_category,
+        chamados.ai_suggested_priority AS ai_suggested_priority,
+        chamados.ai_confidence AS ai_confidence,
+        chamados.ai_status AS ai_status,
         CASE
             WHEN chamados.data_limite IS NOT NULL
             AND chamados.data_limite < :agora
@@ -1331,8 +1497,10 @@ def inicializar_banco():
     criar_tabela_chamados()
     adicionar_coluna_data_limite()
     adicionar_coluna_responsavel_chamado()
+    adicionar_colunas_ia_chamados()
     adicionar_coluna_organizacao_chamados()
     criar_tabela_historico()
     adicionar_coluna_usuario_historico()
     criar_tabela_comentarios()
+    criar_tabela_mensagens_chamado()
     criar_tabela_anexos()

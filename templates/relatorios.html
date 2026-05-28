@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="content-grid">
+    <article class="chart-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Chamados por período</h2>
+                <p>Volume recente de chamados.</p>
+            </div>
+        </div>
+        <canvas data-chart-period></canvas>
+    </article>
+
+    <article class="chart-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Chamados por status</h2>
+                <p>Distribuição atual da operação.</p>
+            </div>
+        </div>
+        <canvas data-chart-status></canvas>
+    </article>
+
+    <article class="content-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Próximos indicadores</h2>
+                <p>Estrutura preparada para SLA, prioridade e categorias recorrentes.</p>
+            </div>
+        </div>
+        <div class="empty-state">
+            Tempo médio de resolução, SLA dentro do prazo e categorias serão ligados aos dados históricos na próxima etapa.
+        </div>
+    </article>
+</section>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% macro status_badge(status) %}
+    {% set classes = {
+        "Aberto": "status-open",
+        "Em triagem pela IA": "status-ai",
+        "Aguardando informações do cliente": "status-waiting",
+        "Pronto para suporte": "status-ready",
+        "Em andamento": "status-progress",
+        "Aguardando cliente": "status-waiting",
+        "Resolvido": "status-solved",
+        "Encerrado": "status-closed",
+        "Reaberto": "status-reopened"
+    } %}
+
+    <span class="status-badge {{ classes.get(status, 'status-closed') }}">
+        {{ status }}
+    </span>
+{% endmacro %}

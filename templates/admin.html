@@ -89,6 +89,18 @@
                         Aberto
                     </option>
 
+                    <option value="Em triagem pela IA" {% if status == "Em triagem pela IA" %}selected{% endif %}>
+                        Em triagem pela IA
+                    </option>
+
+                    <option value="Aguardando informações do cliente" {% if status == "Aguardando informações do cliente" %}selected{% endif %}>
+                        Aguardando informações do cliente
+                    </option>
+
+                    <option value="Pronto para suporte" {% if status == "Pronto para suporte" %}selected{% endif %}>
+                        Pronto para suporte
+                    </option>
+
                     <option value="Em andamento" {% if status == "Em andamento" %}selected{% endif %}>
                         Em andamento
                     </option>

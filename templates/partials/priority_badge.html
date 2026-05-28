@@ -1,0 +1,13 @@
+{% macro priority_badge(priority) %}
+    {% set classes = {
+        "Baixa": "priority-low",
+        "Média": "priority-medium",
+        "Alta": "priority-high",
+        "Urgente": "priority-urgent",
+        "Crítica": "priority-critical"
+    } %}
+
+    <span class="priority-badge {{ classes.get(priority, 'priority-low') }}">
+        {{ priority or "Média" }}
+    </span>
+{% endmacro %}

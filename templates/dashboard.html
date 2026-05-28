@@ -1,439 +1,170 @@
 {% extends "base.html" %}
+{% from "partials/metric_card.html" import metric_card %}
+{% from "partials/status_badge.html" import status_badge %}
+{% from "partials/priority_badge.html" import priority_badge %}
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-5">
-
+<div class="dashboard-header">
     <div>
-
-        <h1 class="fw-bold">
-            Visão operacional
-        </h1>
-
-        <p class="text-muted">
-            Bem-vindo, {{ nome }}
-
-            {% if tipo_usuario in ["admin", "suporte"] %}
-                — indicadores de atendimento
-            {% else %}
-                — acompanhamento dos seus atendimentos
-            {% endif %}
-        </p>
-
+        <h2>Dashboard operacional</h2>
+        <p>Visão executiva de chamados, triagem e atendimento.</p>
     </div>
 
     {% if tipo_usuario in ["admin", "suporte"] %}
-
-        <a
-            href="/admin"
-            class="btn btn-warning"
-        >
+        <a href="/admin" class="app-button-primary">
+            <i data-lucide="arrow-up-right"></i>
             Abrir central
         </a>
-
     {% else %}
-
-        <a
-            href="/novo_chamado"
-            class="btn btn-primary"
-        >
+        <a href="/novo_chamado" class="app-button-primary">
+            <i data-lucide="plus-circle"></i>
             Novo chamado
         </a>
-
     {% endif %}
-
 </div>
 
+<section class="metrics-grid">
+    {{ metric_card("Total", total, "Todos os chamados", "tickets", "teal") }}
+    {{ metric_card("Abertos", abertos, "Aguardando atendimento", "clock-3", "orange") }}
+    {{ metric_card("Em andamento", andamento, "Em atendimento", "activity", "blue") }}
+    {{ metric_card("Resolvidos", resolvidos, "Concluídos", "check-circle-2", "green") }}
+    {{ metric_card("Em triagem IA", triagem_ia, "Analisando com IA", "sparkles", "purple") }}
+    {{ metric_card("Prontos suporte", prontos_suporte, "Aguardando atribuição", "badge-check", "teal") }}
+</section>
 
-<div class="row g-4 mb-5">
+<section class="content-grid">
 
-    <div class="col-md-3">
-
-        <div class="card shadow-sm border-0">
-
-            <div class="card-body">
-
-                <h6 class="text-muted">
-                    Total
-                </h6>
-
-                <h2 class="fw-bold">
-                    {{ total }}
-                </h2>
-
+    <article class="content-card ai-triage-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Triagem Inteligente</h2>
+                <p>Fluxo de triagem com IA em tempo real</p>
             </div>
 
+            <span class="ai-pill">IA</span>
         </div>
 
+        <div class="ai-triage-grid">
+            <div class="ai-stat">
+                <strong>{{ triagem_ia }}</strong>
+                <span>Em triagem</span>
+            </div>
+
+            <div class="ai-stat">
+                <strong>1</strong>
+                <span>Aguardando cliente</span>
+            </div>
+
+            <div class="ai-stat">
+                <strong>24m</strong>
+                <span>Tempo médio de triagem</span>
+            </div>
+
+            <div class="ai-stat">
+                <strong>92%</strong>
+                <span>Precisão da IA</span>
+            </div>
+        </div>
+
+        <div class="ai-visual" aria-hidden="true">
+            <div class="ai-chip">AI</div>
+            <span class="ai-node one"></span>
+            <span class="ai-node two"></span>
+            <span class="ai-node three"></span>
+        </div>
+
+        <a href="/triagem-inteligente" class="app-button-primary mt-3">
+            Acessar Triagem Inteligente
+            <i data-lucide="arrow-right"></i>
+        </a>
+    </article>
+
+    <article class="chart-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Chamados por período</h2>
+                <p>Últimos registros disponíveis</p>
+            </div>
+        </div>
+
+        <canvas data-chart-period></canvas>
+    </article>
+
+    <article class="chart-card">
+        <div class="content-card-header">
+            <div>
+                <h2>Chamados por status</h2>
+                <p>Distribuição operacional</p>
+            </div>
+        </div>
+
+        <canvas data-chart-status></canvas>
+    </article>
+
+</section>
+
+<section class="table-card">
+    <div class="table-card-header">
+        <div>
+            <h2>Chamados recentes</h2>
+            <p class="text-muted mb-0">Últimas movimentações registradas no sistema.</p>
+        </div>
+
+        {% if tipo_usuario in ["admin", "suporte"] %}
+            <a href="/admin" class="app-button-outline">Ver todos</a>
+        {% else %}
+            <a href="/meus_chamados" class="app-button-outline">Ver meus chamados</a>
+        {% endif %}
     </div>
 
-    <div class="col-md-3">
-
-        <div class="card shadow-sm border-0">
-
-            <div class="card-body">
-
-                <h6 class="text-muted">
-                    Abertos
-                </h6>
-
-                <h2 class="fw-bold text-danger">
-                    {{ abertos }}
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <div class="card shadow-sm border-0">
-
-            <div class="card-body">
-
-                <h6 class="text-muted">
-                    Em andamento
-                </h6>
-
-                <h2 class="fw-bold text-warning">
-                    {{ andamento }}
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <div class="card shadow-sm border-0">
-
-            <div class="card-body">
-
-                <h6 class="text-muted">
-                    Resolvidos
-                </h6>
-
-                <h2 class="fw-bold text-success">
-                    {{ resolvidos }}
-                </h2>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-{% if tipo_usuario in ["admin", "suporte"] %}
-
-<div class="mini-dashboard-grid mb-5">
-
-    <details class="mini-dashboard-card" open>
-
-        <summary>
-            <span>Status</span>
-            <strong>{{ total }}</strong>
-        </summary>
-
-        <div class="mini-dashboard-body">
-
-            {% for item in status_grafico %}
-
-                {% if item.rotulo == "Abertos" %}
-                    {% set status_link = "Aberto" %}
-                {% elif item.rotulo == "Resolvidos" %}
-                    {% set status_link = "Resolvido" %}
-                {% elif item.rotulo == "Encerrados" %}
-                    {% set status_link = "Encerrado" %}
-                {% else %}
-                    {% set status_link = item.rotulo %}
-                {% endif %}
-
-                <a
-                    href="/admin?status={{ status_link|urlencode }}"
-                    class="mini-dashboard-item"
-                >
-                    <span class="mini-dot {{ item.classe }}"></span>
-                    <span>{{ item.rotulo }}</span>
-                    <strong>{{ item.valor }}</strong>
-                </a>
-
-            {% endfor %}
-
-        </div>
-
-    </details>
-
-    <details class="mini-dashboard-card">
-
-        <summary>
-            <span>Atenção</span>
-            <strong>{{ urgentes + sem_responsavel + atrasados }}</strong>
-        </summary>
-
-        <div class="mini-dashboard-body">
-
-            <a
-                href="/admin?prioridade=Urgente"
-                class="mini-dashboard-item"
-            >
-                <span class="mini-dot risk-critical"></span>
-                <span>Urgentes</span>
-                <strong>{{ urgentes }}</strong>
-            </a>
-
-            <a
-                href="/admin?responsavel_id=sem_responsavel"
-                class="mini-dashboard-item"
-            >
-                <span class="mini-dot risk-attention"></span>
-                <span>Sem suporte</span>
-                <strong>{{ sem_responsavel }}</strong>
-            </a>
-
-            <a
-                href="/admin"
-                class="mini-dashboard-item"
-            >
-                <span class="mini-dot risk-late"></span>
-                <span>Fora do prazo</span>
-                <strong>{{ atrasados }}</strong>
-            </a>
-
-        </div>
-
-    </details>
-
-    {% if tipo_usuario == "suporte" %}
-
-        <details class="mini-dashboard-card">
-
-            <summary>
-                <span>Minha fila</span>
-                <strong>{{ meus_atendimentos }}</strong>
-            </summary>
-
-            <div class="mini-dashboard-body">
-
-                <a
-                    href="/admin/meus-atendimentos"
-                    class="mini-dashboard-item"
-                >
-                    <span class="mini-dot risk-owned"></span>
-                    <span>Atribuídos a mim</span>
-                    <strong>{{ meus_atendimentos }}</strong>
-                </a>
-
-            </div>
-
-        </details>
-
-    {% endif %}
-
-</div>
-
-{% endif %}
-
-
-<div class="card shadow-sm border-0">
-
-    <div class="card-body">
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-
-            <h4 class="mb-0">
-                Atendimentos recentes
-            </h4>
-
-            {% if tipo_usuario in ["admin", "suporte"] %}
-
-                <a
-                    href="/admin"
-                    class="btn btn-sm btn-outline-dark"
-                >
-                    Ver todos
-                </a>
-
-            {% else %}
-
-                <a
-                    href="/meus_chamados"
-                    class="btn btn-sm btn-outline-dark"
-                >
-                    Ver meus chamados
-                </a>
-
-            {% endif %}
-
-        </div>
-
-        <table class="table table-hover align-middle">
-
-            <thead class="table-dark">
-
+    <div class="table-scroll">
+        <table class="data-table">
+            <thead>
                 <tr>
                     <th>ID</th>
                     <th>Título</th>
+                    {% if tipo_usuario in ["admin", "suporte"] %}
+                        <th>Solicitante</th>
+                    {% endif %}
                     <th>Status</th>
                     <th>Prioridade</th>
-
-                    {% if tipo_usuario in ["admin", "suporte"] %}
-                        <th>Usuário</th>
-                    {% endif %}
-
+                    <th>SLA</th>
                     <th>Data</th>
                     <th>Ação</th>
                 </tr>
-
             </thead>
 
             <tbody>
-
                 {% for chamado in chamados_recentes %}
+                    <tr>
+                        <td>CH-{{ "%04d"|format(chamado.id) }}</td>
+                        <td>{{ chamado.titulo }}</td>
 
-                <tr>
-
-                    <td data-label="ID">
-                        <span class="badge text-bg-light border">
-                            CH-{{ "%04d"|format(chamado.id) }}
-                        </span>
-                    </td>
-
-                    <td data-label="Título">
-                        {{ chamado.titulo }}
-                    </td>
-
-                    <td data-label="Status">
-
-                        {% if chamado.status == "Aberto" %}
-
-                            <span class="badge bg-danger">
-                                Aberto
-                            </span>
-
-                        {% elif chamado.status == "Em andamento" %}
-
-                            <span class="badge bg-warning text-dark">
-                                Em andamento
-                            </span>
-
-                        {% elif chamado.status == "Resolvido" %}
-
-                            <span class="badge bg-success">
-                                Resolvido
-                            </span>
-
-                        {% elif chamado.status == "Encerrado" %}
-
-                            <span class="badge bg-secondary">
-                                Encerrado
-                            </span>
-
-                        {% else %}
-
-                            <span class="badge bg-secondary">
-                                {{ chamado.status }}
-                            </span>
-
+                        {% if tipo_usuario in ["admin", "suporte"] %}
+                            <td>{{ chamado.usuario_nome }}</td>
                         {% endif %}
 
-                    </td>
-
-                    <td data-label="Prioridade">
-
-                        {% if chamado.prioridade == "Urgente" %}
-
-                            <span class="badge bg-dark">
-                                Urgente
-                            </span>
-
-                        {% elif chamado.prioridade == "Alta" %}
-
-                            <span class="badge bg-danger">
-                                Alta
-                            </span>
-
-                        {% elif chamado.prioridade == "Média" %}
-
-                            <span class="badge bg-warning text-dark">
-                                Média
-                            </span>
-
-                        {% else %}
-
-                            <span class="badge bg-primary">
-                                Baixa
-                            </span>
-
-                        {% endif %}
-
-                    </td>
-
-                    {% if tipo_usuario in ["admin", "suporte"] %}
-
-                        <td data-label="Usuário">
-                            {{ chamado.usuario_nome }}
+                        <td>{{ status_badge(chamado.status) }}</td>
+                        <td>{{ priority_badge(chamado.prioridade) }}</td>
+                        <td>{{ chamado.data_limite or "-" }}</td>
+                        <td>{{ chamado.data_criacao }}</td>
+                        <td>
+                            <a href="/chamado/{{ chamado.id }}" class="app-button-outline">
+                                Abrir
+                            </a>
                         </td>
-
-                        <td data-label="Data">
-                            {{ chamado.data_criacao }}
-                        </td>
-
-                    {% else %}
-
-                        <td data-label="Data">
-                            {{ chamado.data_criacao }}
-                        </td>
-
-                    {% endif %}
-
-                    <td data-label="Ação">
-
-                        <a
-                            href="/chamado/{{ chamado.id }}"
-                            class="btn btn-sm btn-primary"
-                        >
-                            Abrir
-                        </a>
-
-                    </td>
-
-                </tr>
-
+                    </tr>
                 {% else %}
-
-                <tr>
-
-                    {% if tipo_usuario in ["admin", "suporte"] %}
-
-                        <td colspan="7" class="text-center text-muted py-4">
+                    <tr>
+                        <td colspan="{% if tipo_usuario in ['admin', 'suporte'] %}8{% else %}7{% endif %}" class="text-center text-muted py-4">
                             Nenhum chamado encontrado.
                         </td>
-
-                    {% else %}
-
-                        <td colspan="6" class="text-center text-muted py-4">
-                            Você ainda não possui chamados.
-                        </td>
-
-                    {% endif %}
-
-                </tr>
-
+                    </tr>
                 {% endfor %}
-
             </tbody>
-
         </table>
-
     </div>
-
-</div>
+</section>
 
 {% endblock %}

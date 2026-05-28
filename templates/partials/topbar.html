@@ -1,0 +1,50 @@
+<header class="topbar">
+
+    <button
+        type="button"
+        class="sidebar-toggle"
+        data-sidebar-toggle
+        aria-label="Abrir menu"
+    >
+        <i data-lucide="menu"></i>
+    </button>
+
+    <div class="topbar-heading">
+        <h1>{{ page_heading|default("Visão operacional") }}</h1>
+        <p>
+            {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ " — acompanhamento dos seus atendimentos") }}
+        </p>
+    </div>
+
+    <form action="/dashboard" method="GET" class="topbar-search" role="search">
+        <i data-lucide="search"></i>
+        <input
+            type="search"
+            name="q"
+            value="{{ request.args.get('q', '') }}"
+            placeholder="Buscar chamados, usuários, IDs..."
+            aria-label="Buscar chamados, usuários, IDs"
+        >
+    </form>
+
+    <button
+        type="button"
+        class="notification-button"
+        aria-label="Notificações"
+    >
+        <i data-lucide="bell"></i>
+        <span></span>
+    </button>
+
+    <div class="topbar-user">
+        <div class="avatar">
+            {{ session.get("usuario_nome", "U")[0]|upper }}
+        </div>
+
+        <div>
+            <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
+            <span>{{ session.get("usuario_tipo", "cliente")|capitalize }}</span>
+        </div>
+    </div>
+
+</header>

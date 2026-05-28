@@ -79,8 +79,17 @@ def usuarios_admin():
 
     return render_template(
         "usuarios_admin.html",
-        usuarios=usuarios
+        usuarios=usuarios,
+        page_title="Usuários - Nortia",
+        page_heading="Usuários",
+        page_subtitle="Gerencie acessos internos da organização"
     )
+
+
+@admin.route("/usuarios")
+@admin_required
+def usuarios_alias():
+    return redirect("/admin/usuarios")
 
 
 @admin.route(
@@ -325,7 +334,7 @@ def assumir_chamado(chamado_id):
         data_atualizacao
     )
 
-    if chamado["status"] == "Aberto":
+    if chamado["status"] in ["Aberto", "Em triagem pela IA", "Pronto para suporte"]:
 
         atualizar_chamado(
             chamado_id,
@@ -337,7 +346,7 @@ def assumir_chamado(chamado_id):
         registrar_historico(
             chamado_id,
             session["usuario_id"],
-            "Status alterado de Aberto para Em andamento",
+            f"Status alterado de {chamado['status']} para Em andamento",
             data_atualizacao
         )
 

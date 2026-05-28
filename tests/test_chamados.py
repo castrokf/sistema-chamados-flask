@@ -22,7 +22,7 @@ def test_cliente_cria_chamado(client, login, db_module, csrf_token):
     assert resposta.headers["Location"] == "/meus_chamados"
     assert len(chamados) == 1
     assert chamados[0]["titulo"] == "Erro de acesso"
-    assert chamados[0]["status"] == "Aberto"
+    assert chamados[0]["status"] == "Em triagem pela IA"
     assert chamados[0]["prioridade"] == "Média"
     assert len(historico) == 1
 
