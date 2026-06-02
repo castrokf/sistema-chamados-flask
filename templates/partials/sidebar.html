@@ -86,6 +86,14 @@
             <span>Relatórios</span>
         </a>
 
+        <a
+            href="/central-ajuda"
+            class="sidebar-link {% if path.startswith('/central-ajuda') %}sidebar-link-active{% endif %}"
+        >
+            <i data-lucide="book-open"></i>
+            <span>Central de Ajuda</span>
+        </a>
+
         {% if tipo == "admin" %}
 
             <a

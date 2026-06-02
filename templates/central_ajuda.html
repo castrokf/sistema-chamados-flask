@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="dashboard-header">
+    <div>
+        <h2>Central de Ajuda</h2>
+        <p>Artigos para reduzir recorrência de chamados e orientar a operação.</p>
+    </div>
+</div>
+
+<section class="content-card mb-4">
+    <form method="GET" class="search-panel">
+        <div>
+            <label class="form-label">Buscar artigos</label>
+            <input
+                type="search"
+                name="q"
+                class="form-control"
+                value="{{ pesquisa }}"
+                placeholder="Busque por título, conteúdo ou categoria..."
+            >
+        </div>
+
+        <div class="search-panel-actions">
+            <button class="app-button-primary" type="submit">
+                <i data-lucide="search"></i>
+                Buscar
+            </button>
+            <a href="/central-ajuda" class="app-button-outline">Limpar</a>
+        </div>
+    </form>
+</section>
+
+{% if session.get("usuario_tipo") in ["admin", "suporte"] %}
+    <section class="content-card mb-4">
+        <div class="content-card-header">
+            <div>
+                <h2>Novo artigo</h2>
+                <p>Publique orientações públicas ou internas para apoiar o atendimento.</p>
+            </div>
+        </div>
+
+        <form method="POST" action="/central-ajuda/novo" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-md-4">
+                <label class="form-label">Título</label>
+                <input name="title" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Categoria</label>
+                <input name="category" class="form-control" placeholder="Ex.: Acesso">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Visibilidade</label>
+                <select name="visibility" class="form-select">
+                    <option value="public">Público</option>
+                    <option value="internal">Interno</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Conteúdo</label>
+                <textarea name="content" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="app-button-primary">Publicar artigo</button>
+            </div>
+        </form>
+    </section>
+{% endif %}
+
+<section class="content-grid reports-grid">
+    {% for artigo in artigos %}
+        <article class="content-card">
+            <div class="content-card-header">
+                <div>
+                    <h2>{{ artigo.title }}</h2>
+                    <p>{{ artigo.category or "Geral" }} · {{ "Interno" if artigo.visibility == "internal" else "Público" }}</p>
+                </div>
+            </div>
+            <p>{{ artigo.content }}</p>
+        </article>
+    {% else %}
+        <article class="content-card">
+            <div class="empty-state">Nenhum artigo encontrado.</div>
+        </article>
+    {% endfor %}
+</section>
+
+{% endblock %}

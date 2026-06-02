@@ -555,7 +555,18 @@ def criar_tabela_chamados():
         ai_confidence INTEGER DEFAULT 0,
         ai_status TEXT,
         triage_started_at TEXT,
-        triage_finished_at TEXT
+        triage_finished_at TEXT,
+        categoria TEXT,
+        tipo TEXT,
+        prazo_primeira_resposta TEXT,
+        prazo_resolucao TEXT,
+        primeira_resposta_em TEXT,
+        resolvido_em TEXT,
+        fechado_em TEXT,
+        sla_primeira_resposta_status TEXT,
+        sla_resolucao_status TEXT,
+        created_at TEXT,
+        updated_at TEXT
     )
     """)
 
@@ -593,11 +604,21 @@ def criar_chamado(
     ai_confidence=0,
     ai_status="pendente",
     triage_started_at=None,
-    triage_finished_at=None
+    triage_finished_at=None,
+    categoria=None,
+    tipo="Solicitação",
+    prazo_primeira_resposta=None,
+    prazo_resolucao=None,
+    sla_primeira_resposta_status="dentro_do_prazo",
+    sla_resolucao_status="dentro_do_prazo"
 ):
     if organizacao_id is None:
         usuario = buscar_usuario_por_id(usuario_id)
         organizacao_id = usuario["organizacao_id"]
+
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    categoria = categoria or ai_suggested_category or "Outros"
+    prazo_resolucao = prazo_resolucao or data_limite
 
     return inserir_e_retornar_id("""
     INSERT INTO chamados (
@@ -616,7 +637,15 @@ def criar_chamado(
         ai_confidence,
         ai_status,
         triage_started_at,
-        triage_finished_at
+        triage_finished_at,
+        categoria,
+        tipo,
+        prazo_primeira_resposta,
+        prazo_resolucao,
+        sla_primeira_resposta_status,
+        sla_resolucao_status,
+        created_at,
+        updated_at
     )
     VALUES (
         :organizacao_id,
@@ -634,7 +663,15 @@ def criar_chamado(
         :ai_confidence,
         :ai_status,
         :triage_started_at,
-        :triage_finished_at
+        :triage_finished_at,
+        :categoria,
+        :tipo,
+        :prazo_primeira_resposta,
+        :prazo_resolucao,
+        :sla_primeira_resposta_status,
+        :sla_resolucao_status,
+        :created_at,
+        :updated_at
     )
     """, {
         "organizacao_id": organizacao_id,
@@ -651,7 +688,15 @@ def criar_chamado(
         "ai_confidence": ai_confidence,
         "ai_status": ai_status,
         "triage_started_at": triage_started_at,
-        "triage_finished_at": triage_finished_at
+        "triage_finished_at": triage_finished_at,
+        "categoria": categoria,
+        "tipo": tipo,
+        "prazo_primeira_resposta": prazo_primeira_resposta,
+        "prazo_resolucao": prazo_resolucao,
+        "sla_primeira_resposta_status": sla_primeira_resposta_status,
+        "sla_resolucao_status": sla_resolucao_status,
+        "created_at": agora,
+        "updated_at": agora
     })
 
 
@@ -701,10 +746,12 @@ def atualizar_chamado(
     status,
     organizacao_id=None
 ):
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     parametros = {
         "id_chamado": id_chamado,
         "resposta": resposta,
-        "status": status
+        "status": status,
+        "agora": agora
     }
 
     filtro_org = ""
@@ -716,8 +763,69 @@ def atualizar_chamado(
     executar(f"""
     UPDATE chamados
     SET resposta = :resposta,
-        status = :status
+        status = :status,
+        updated_at = :agora,
+        resolvido_em = CASE
+            WHEN :status = 'Resolvido' AND resolvido_em IS NULL THEN :agora
+            ELSE resolvido_em
+        END,
+        fechado_em = CASE
+            WHEN :status IN ('Encerrado', 'Fechado') AND fechado_em IS NULL THEN :agora
+            ELSE fechado_em
+        END
     WHERE id = :id_chamado
+    {filtro_org}
+    """, parametros)
+
+
+def registrar_primeira_resposta_chamado(chamado_id, organizacao_id=None):
+    parametros = {
+        "chamado_id": chamado_id,
+        "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    filtro_org = ""
+
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
+
+    executar(f"""
+    UPDATE chamados
+    SET primeira_resposta_em = COALESCE(primeira_resposta_em, :agora),
+        sla_primeira_resposta_status = CASE
+            WHEN primeira_resposta_em IS NULL THEN 'cumprido'
+            ELSE sla_primeira_resposta_status
+        END,
+        updated_at = :agora
+    WHERE id = :chamado_id
+    {filtro_org}
+    """, parametros)
+
+
+def atualizar_status_sla_chamado(
+    chamado_id,
+    sla_primeira_resposta_status=None,
+    sla_resolucao_status=None,
+    organizacao_id=None
+):
+    parametros = {
+        "chamado_id": chamado_id,
+        "sla_primeira_resposta_status": sla_primeira_resposta_status,
+        "sla_resolucao_status": sla_resolucao_status,
+        "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    filtro_org = ""
+
+    if organizacao_id is not None:
+        filtro_org = " AND organizacao_id = :organizacao_id"
+        parametros["organizacao_id"] = organizacao_id
+
+    executar(f"""
+    UPDATE chamados
+    SET sla_primeira_resposta_status = COALESCE(:sla_primeira_resposta_status, sla_primeira_resposta_status),
+        sla_resolucao_status = COALESCE(:sla_resolucao_status, sla_resolucao_status),
+        updated_at = :agora
+    WHERE id = :chamado_id
     {filtro_org}
     """, parametros)
 
@@ -1284,6 +1392,302 @@ def adicionar_colunas_ia_chamados():
         )
 
 
+def adicionar_colunas_helpdesk_chamados():
+    colunas = [
+        ("categoria", "TEXT"),
+        ("tipo", "TEXT"),
+        ("prazo_primeira_resposta", "TEXT"),
+        ("prazo_resolucao", "TEXT"),
+        ("primeira_resposta_em", "TEXT"),
+        ("resolvido_em", "TEXT"),
+        ("fechado_em", "TEXT"),
+        ("sla_primeira_resposta_status", "TEXT"),
+        ("sla_resolucao_status", "TEXT"),
+        ("created_at", "TEXT"),
+        ("updated_at", "TEXT")
+    ]
+
+    for coluna, definicao in colunas:
+        adicionar_coluna(
+            "chamados",
+            coluna,
+            definicao
+        )
+
+    executar("""
+    UPDATE chamados
+    SET created_at = COALESCE(created_at, data_criacao),
+        updated_at = COALESCE(updated_at, data_criacao),
+        tipo = COALESCE(tipo, 'Solicitação'),
+        categoria = COALESCE(categoria, ai_suggested_category, 'Outros'),
+        prazo_resolucao = COALESCE(prazo_resolucao, data_limite),
+        sla_resolucao_status = COALESCE(sla_resolucao_status, 'dentro_do_prazo'),
+        sla_primeira_resposta_status = COALESCE(sla_primeira_resposta_status, 'dentro_do_prazo')
+    """)
+
+
+def criar_tabela_categorias_chamados():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS categorias_chamados (
+        id {id_sql()},
+        organizacao_id INTEGER NOT NULL,
+        nome TEXT NOT NULL,
+        ativo INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """)
+
+
+def criar_tabela_tipos_chamados():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS tipos_chamados (
+        id {id_sql()},
+        organizacao_id INTEGER NOT NULL,
+        nome TEXT NOT NULL,
+        ativo INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """)
+
+
+def criar_tabela_regras_sla():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS regras_sla (
+        id {id_sql()},
+        organizacao_id INTEGER NOT NULL,
+        prioridade TEXT NOT NULL,
+        horas_primeira_resposta INTEGER NOT NULL,
+        horas_resolucao INTEGER NOT NULL,
+        ativo INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """)
+
+
+def criar_tabela_sla_pausas():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS ticket_sla_pauses (
+        id {id_sql()},
+        ticket_id INTEGER NOT NULL,
+        started_at TEXT NOT NULL,
+        ended_at TEXT,
+        reason TEXT NOT NULL,
+        created_by INTEGER
+    )
+    """)
+
+
+def criar_tabela_base_conhecimento():
+    executar(f"""
+    CREATE TABLE IF NOT EXISTS knowledge_articles (
+        id {id_sql()},
+        organizacao_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        content TEXT NOT NULL,
+        category TEXT,
+        visibility TEXT NOT NULL DEFAULT 'public',
+        created_by INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1
+    )
+    """)
+
+
+def criar_indices_operacionais():
+    indices = [
+        ("idx_usuarios_organizacao", "usuarios", "organizacao_id"),
+        ("idx_chamados_organizacao", "chamados", "organizacao_id"),
+        ("idx_chamados_usuario", "chamados", "usuario_id"),
+        ("idx_chamados_responsavel", "chamados", "responsavel_id"),
+        ("idx_chamados_status", "chamados", "status"),
+        ("idx_chamados_prioridade", "chamados", "prioridade"),
+        ("idx_chamados_data_criacao", "chamados", "data_criacao"),
+        ("idx_chamados_data_limite", "chamados", "data_limite"),
+        ("idx_anexos_chamado", "anexos_chamados", "chamado_id"),
+        ("idx_mensagens_ticket", "ticket_messages", "ticket_id"),
+        ("idx_historico_chamado", "historico_chamados", "chamado_id"),
+        ("idx_kb_organizacao", "knowledge_articles", "organizacao_id")
+    ]
+
+    for nome, tabela, coluna in indices:
+        executar(f"""
+        CREATE INDEX IF NOT EXISTS {nome}
+        ON {tabela} ({coluna})
+        """)
+
+
+def garantir_taxonomias_padrao():
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    categorias = [
+        "Acesso",
+        "Sistema",
+        "Financeiro",
+        "Cadastro",
+        "Equipamento",
+        "Manutenção",
+        "Relatórios",
+        "Outros"
+    ]
+    tipos = [
+        "Incidente",
+        "Solicitação",
+        "Dúvida",
+        "Melhoria"
+    ]
+
+    organizacoes = consultar_lista("""
+    SELECT id
+    FROM organizacoes
+    WHERE ativo = 1
+    """)
+
+    for organizacao in organizacoes:
+        organizacao_id = organizacao["id"]
+
+        for categoria in categorias:
+            existente = consultar_um("""
+            SELECT id
+            FROM categorias_chamados
+            WHERE organizacao_id = :organizacao_id
+            AND nome = :nome
+            """, {
+                "organizacao_id": organizacao_id,
+                "nome": categoria
+            })
+
+            if not existente:
+                executar("""
+                INSERT INTO categorias_chamados (
+                    organizacao_id,
+                    nome,
+                    ativo,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :organizacao_id,
+                    :nome,
+                    1,
+                    :agora,
+                    :agora
+                )
+                """, {
+                    "organizacao_id": organizacao_id,
+                    "nome": categoria,
+                    "agora": agora
+                })
+
+        for tipo in tipos:
+            existente = consultar_um("""
+            SELECT id
+            FROM tipos_chamados
+            WHERE organizacao_id = :organizacao_id
+            AND nome = :nome
+            """, {
+                "organizacao_id": organizacao_id,
+                "nome": tipo
+            })
+
+            if not existente:
+                executar("""
+                INSERT INTO tipos_chamados (
+                    organizacao_id,
+                    nome,
+                    ativo,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :organizacao_id,
+                    :nome,
+                    1,
+                    :agora,
+                    :agora
+                )
+                """, {
+                    "organizacao_id": organizacao_id,
+                    "nome": tipo,
+                    "agora": agora
+                })
+
+
+def listar_artigos_conhecimento(organizacao_id, pesquisa="", incluir_internos=False):
+    parametros = {
+        "organizacao_id": organizacao_id,
+        "pesquisa": f"%{pesquisa}%"
+    }
+    filtro_visibilidade = "AND visibility = 'public'"
+
+    if incluir_internos:
+        filtro_visibilidade = ""
+
+    return consultar_lista(f"""
+    SELECT *
+    FROM knowledge_articles
+    WHERE organizacao_id = :organizacao_id
+    AND active = 1
+    {filtro_visibilidade}
+    AND (
+        title LIKE :pesquisa
+        OR content LIKE :pesquisa
+        OR category LIKE :pesquisa
+    )
+    ORDER BY updated_at DESC, id DESC
+    """, parametros)
+
+
+def criar_artigo_conhecimento(
+    organizacao_id,
+    title,
+    slug,
+    content,
+    category,
+    visibility,
+    created_by
+):
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return inserir_e_retornar_id("""
+    INSERT INTO knowledge_articles (
+        organizacao_id,
+        title,
+        slug,
+        content,
+        category,
+        visibility,
+        created_by,
+        created_at,
+        updated_at,
+        active
+    )
+    VALUES (
+        :organizacao_id,
+        :title,
+        :slug,
+        :content,
+        :category,
+        :visibility,
+        :created_by,
+        :agora,
+        :agora,
+        1
+    )
+    """, {
+        "organizacao_id": organizacao_id,
+        "title": title,
+        "slug": slug,
+        "content": content,
+        "category": category,
+        "visibility": visibility,
+        "created_by": created_by,
+        "agora": agora
+    })
+
 def listar_administradores(organizacao_id=None):
     parametros = {}
     filtro_org = ""
@@ -1498,9 +1902,17 @@ def inicializar_banco():
     adicionar_coluna_data_limite()
     adicionar_coluna_responsavel_chamado()
     adicionar_colunas_ia_chamados()
+    adicionar_colunas_helpdesk_chamados()
     adicionar_coluna_organizacao_chamados()
     criar_tabela_historico()
     adicionar_coluna_usuario_historico()
     criar_tabela_comentarios()
     criar_tabela_mensagens_chamado()
     criar_tabela_anexos()
+    criar_tabela_categorias_chamados()
+    criar_tabela_tipos_chamados()
+    criar_tabela_regras_sla()
+    criar_tabela_sla_pausas()
+    criar_tabela_base_conhecimento()
+    garantir_taxonomias_padrao()
+    criar_indices_operacionais()

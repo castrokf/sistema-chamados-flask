@@ -11,6 +11,8 @@ MODULES_TO_RELOAD = [
     "routes.admin",
     "routes.auth",
     "routes.chamados",
+    "routes.knowledge",
+    "config",
     "utils.security",
     "utils.decorators",
 ]

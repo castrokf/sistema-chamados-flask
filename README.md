@@ -55,7 +55,9 @@ Esse fluxo aproxima a aplicação de uma operação corporativa real, com rastre
 - Prioridade baixa, média e alta.
 - Cálculo automático de prazo de atendimento.
 - Upload de anexos com suporte local e Cloudinary.
+- Validação de extensão, MIME type, tamanho e nome seguro de anexos.
 - Comentários entre usuário e equipe.
+- Mensagens públicas e notas internas restritas à equipe.
 - Histórico de movimentações por chamado.
 - Atribuição de responsável.
 - Fluxo para suporte assumir atendimento.
@@ -63,7 +65,10 @@ Esse fluxo aproxima a aplicação de uma operação corporativa real, com rastre
 - Painel administrativo com filtros.
 - Painel de atendimentos atribuídos.
 - Indicadores de volume, status, responsáveis e prazos.
-- Gráficos operacionais no dashboard.
+- Gráficos operacionais concentrados em relatórios.
+- Estrutura de SLA para primeira resposta, resolução e pausas.
+- Central de Ajuda com artigos públicos e internos.
+- Estrutura preparada para SMTP e webhooks operacionais.
 - Recuperação de senha por token temporário.
 - Proteção CSRF em formulários de alteração.
 - Limite simples de tentativas de login.
@@ -100,6 +105,7 @@ Gerencia acessos internos, altera perfis, visualiza todos os chamados, acompanha
 - Gunicorn
 - Waitress
 - Cloudinary
+- Alembic
 - Render
 
 ## Estrutura
@@ -123,8 +129,12 @@ Principais responsabilidades:
 - `main.py`: inicialização da aplicação, rotas, segurança básica e criação das tabelas.
 - `database.py`: acesso a dados com SQLAlchemy Core, compatível com SQLite e PostgreSQL.
 - `seed_database.py`: criação da massa inicial de usuários e chamados para avaliação.
-- `routes/`: autenticação, chamados e área administrativa.
-- `services/storage.py`: armazenamento de anexos local ou via Cloudinary.
+- `routes/`: autenticação, chamados, área administrativa e central de ajuda.
+- `services/storage.py`: armazenamento e validação de anexos local ou via Cloudinary.
+- `services/sla.py`: cálculo de prazos de primeira resposta e resolução.
+- `services/email.py`: camada SMTP opcional.
+- `services/notifications.py`: camada opcional de webhook.
+- `migrations/`: migrações versionadas com Alembic.
 - `templates/`: telas HTML renderizadas pelo Flask.
 - `static/`: CSS, imagens e identidade visual.
 - `tests/`: testes automatizados dos fluxos principais.
@@ -181,6 +191,8 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
+No mínimo, mantenha uma `FLASK_SECRET_KEY` local. Em produção essa variável é obrigatória.
+
 5. Crie a base inicial:
 
 ```bash
@@ -221,7 +233,7 @@ Execute:
 python -m pytest
 ```
 
-Os testes cobrem autenticação, recuperação de senha, proteção CSRF, permissões por perfil, isolamento por organização, criação de chamados, comentários, atualização de status e atribuição de responsável.
+Os testes cobrem autenticação, recuperação de senha, proteção CSRF, permissões por perfil, isolamento por organização, criação de chamados, comentários, atualização de status, atribuição de responsável, nota interna e upload seguro.
 
 Os testes usam SQLite temporário e não alteram o banco local `chamados.db`.
 
@@ -240,6 +252,22 @@ DATABASE_URL=postgresql://usuario:senha@host:porta/banco
 ```
 
 URLs no formato `postgres://` também são aceitas e convertidas automaticamente para o driver usado pela aplicação.
+
+## Migrações
+
+O projeto agora possui estrutura Alembic para evolução versionada do banco:
+
+```bash
+alembic upgrade head
+```
+
+Para criar uma nova versão:
+
+```bash
+alembic revision -m "descricao_da_mudanca"
+```
+
+Observação: para manter compatibilidade com a versão atual e não quebrar o Render, `database.py` ainda cria/ajusta tabelas mínimas durante a inicialização. A recomendação é migrar novas mudanças de schema para `migrations/` gradualmente.
 
 ## Multiempresa
 
@@ -270,12 +298,41 @@ Em hospedagens gratuitas, arquivos salvos no disco do servidor podem ser perdido
 - localmente, salva em `uploads/`;
 - em produção, se `CLOUDINARY_URL` existir, envia para Cloudinary.
 
+O upload valida extensão, MIME type, tamanho máximo, nome seguro e gera um identificador único para evitar sobrescrita e path traversal.
+
+Extensões permitidas:
+
+```text
+png, jpg, jpeg, pdf, txt, doc, docx, xls, xlsx
+```
+
 Variáveis opcionais:
 
 ```text
 CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 CLOUDINARY_FOLDER=nortia-atendimentos
 ```
+
+## SMTP e Webhook
+
+A camada de email fica pronta para uso real, mas não quebra a aplicação quando SMTP não está configurado:
+
+```text
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+SMTP_USE_TLS=true
+```
+
+Para alertas internos via Slack, Teams, Discord ou ferramenta equivalente:
+
+```text
+WEBHOOK_URL=
+```
+
+Sem `WEBHOOK_URL`, os alertas são ignorados com log informativo.
 
 ## Deploy no Render
 
@@ -292,6 +349,7 @@ gunicorn main:app
 Variáveis recomendadas:
 
 ```text
+FLASK_ENV=production
 FLASK_SECRET_KEY=defina-uma-chave-secreta
 DATABASE_URL=use-a-url-real-do-postgresql
 AUTO_SEED_INITIAL_DATA=true
@@ -314,11 +372,11 @@ web: gunicorn main:app
 
 ## Evolução Recomendada
 
-- Criar migrations versionadas com Alembic.
-- Implementar envio real de email para recuperação de senha.
+- Migrar gradualmente todo o schema manual de `database.py` para migrations Alembic completas.
+- Ligar envio real de email nos fluxos de recuperação de senha, atribuição e SLA.
 - Adicionar paginação na listagem de chamados.
-- Criar filtros por período e por setor.
-- Melhorar logs de auditoria.
+- Criar exportação CSV nos relatórios.
+- Expandir logs de auditoria para todos os eventos de SLA.
 - Criar API REST para integrações externas.
 - Expandir configurações por empresa.
 
@@ -326,9 +384,11 @@ web: gunicorn main:app
 
 - O banco `chamados.db` é criado automaticamente na primeira execução local.
 - `chamados.db`, `uploads/`, ambiente virtual e caches não devem ser versionados.
+- Em produção, a aplicação falha se `FLASK_SECRET_KEY` não estiver definida.
 - O cadastro público está desativado.
 - Novos acessos devem ser criados pelo painel administrativo.
+- Arquivos antigos de backup soltos na raiz foram removidos do projeto local.
 
 ## Status
 
-Versão funcional com autenticação, gestão de acessos, abertura e acompanhamento de chamados, anexos, recuperação de senha, dashboard operacional, estrutura multiempresa, PostgreSQL em produção, testes automatizados e deploy online.
+Versão funcional com autenticação, gestão de acessos, abertura e acompanhamento de chamados, anexos seguros, recuperação de senha, dashboard operacional, relatórios, central de ajuda, estrutura multiempresa, base de SLA, PostgreSQL em produção, testes automatizados e deploy online.

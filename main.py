@@ -15,9 +15,11 @@ from database import (
     inicializar_banco
 )
 
+from config import carregar_configuracao
 from routes.auth import auth
 from routes.chamados import chamados
 from routes.admin import admin
+from routes.knowledge import knowledge
 from utils.decorators import sessao_autenticada
 from utils.security import csrf_token, validar_csrf_token
 
@@ -37,20 +39,16 @@ def auto_seed_initial_data():
         criar_banco_inicial(recriar=False)
 
 
+configuracao = carregar_configuracao()
+
 app = Flask(__name__)
 
-app.secret_key = os.environ.get(
-    "FLASK_SECRET_KEY",
-    "sistema_chamados"
-)
-
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = os.environ.get(
-    "SESSION_COOKIE_SECURE",
-    "false"
-).lower() == "true"
+app.secret_key = configuracao.secret_key
+app.config["APP_ENV"] = configuracao.env
+app.config["MAX_CONTENT_LENGTH"] = configuracao.max_content_length
+app.config["SESSION_COOKIE_HTTPONLY"] = configuracao.session_cookie_httponly
+app.config["SESSION_COOKIE_SAMESITE"] = configuracao.session_cookie_samesite
+app.config["SESSION_COOKIE_SECURE"] = configuracao.session_cookie_secure
 
 os.makedirs(
     "uploads",
@@ -60,6 +58,7 @@ os.makedirs(
 app.register_blueprint(auth)
 app.register_blueprint(chamados)
 app.register_blueprint(admin)
+app.register_blueprint(knowledge)
 
 
 inicializar_banco()

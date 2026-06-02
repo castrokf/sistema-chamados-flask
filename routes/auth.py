@@ -21,6 +21,7 @@ from database import (
 )
 
 from argon2 import PasswordHasher
+from services.email import enviar_email
 
 auth = Blueprint(
     "auth",
@@ -179,6 +180,16 @@ def recuperar_senha():
             )
 
             link_recuperacao = request.url_root.rstrip("/") + f"/redefinir-senha/{token}"
+
+            enviar_email(
+                usuario["email"],
+                "Recuperação de senha - Nortia",
+                (
+                    "Recebemos uma solicitação para redefinir sua senha na Nortia.\n\n"
+                    f"Acesse o link abaixo em até 30 minutos:\n{link_recuperacao}\n\n"
+                    "Se você não solicitou essa alteração, ignore esta mensagem."
+                )
+            )
 
             if os.environ.get("SHOW_RESET_LINK", "false").lower() == "true":
 

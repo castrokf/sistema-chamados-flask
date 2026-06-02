@@ -168,3 +168,55 @@ def test_suporte_assume_chamado_aberto(client, login, create_user, db_module, cs
     assert chamado["status"] == "Em andamento"
     assert chamado["responsavel_id"] == suporte["id"]
     assert responsavel == "Suporte Teste"
+
+
+def test_nota_interna_nao_aparece_para_cliente(client, login, create_user, db_module, csrf_token):
+    cliente = create_user(
+        nome="Cliente Teste",
+        email="cliente.nota@teste.com",
+        tipo="cliente",
+    )
+
+    chamado_id = db_module.criar_chamado(
+        "Chamado com nota interna",
+        "Descrição do chamado.",
+        "Média",
+        cliente["id"],
+        "2026-01-01 10:00:00",
+        "2026-01-03 10:00:00",
+        cliente["organizacao_id"],
+    )
+
+    login(
+        nome="Suporte Teste",
+        email="suporte.nota@teste.com",
+        tipo="suporte",
+    )
+
+    resposta = client.post(
+        f"/chamado/{chamado_id}/messages",
+        data={
+            "message": "Nota visível apenas para a equipe.",
+            "is_internal": "true",
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
+        },
+    )
+
+    assert resposta.status_code == 200
+
+    client.get("/logout")
+    client.post(
+        "/login",
+        data={
+            "email": "cliente.nota@teste.com",
+            "senha": "Senha@123",
+            "csrf_token": csrf_token("/login"),
+        },
+        follow_redirects=False,
+    )
+
+    resposta_cliente = client.get(f"/chamado/{chamado_id}/messages")
+    mensagens = resposta_cliente.get_json()
+
+    assert resposta_cliente.status_code == 200
+    assert mensagens == []

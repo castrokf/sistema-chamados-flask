@@ -33,6 +33,7 @@ from database import (
     buscar_anexo,
     buscar_responsavel_chamado,
     buscar_usuario_por_id,
+    registrar_primeira_resposta_chamado,
     contar_chamados_sem_responsavel,
     contar_chamados_responsavel,
     contar_chamados_atrasados,
@@ -42,10 +43,11 @@ from database import (
     listar_chamados_admin
 )
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from services.storage import (
     arquivo_remoto,
-    salvar_arquivo_chamado
+    salvar_arquivo_chamado,
+    UploadInvalido
 )
 from utils.decorators import login_required
 from services.ai_triage import (
@@ -54,6 +56,7 @@ from services.ai_triage import (
     suggest_category,
     suggest_priority
 )
+from services.sla import calcular_prazos
 
 chamados = Blueprint(
     "chamados",
@@ -61,33 +64,7 @@ chamados = Blueprint(
 )
 
 def calcular_data_limite(prioridade):
-
-    horas_por_prioridade = {
-        "Urgente": 1,
-        "Alta": 4,
-        "Média": 24,
-        "Baixa": 72
-    }
-
-    horas = horas_por_prioridade.get(
-        prioridade,
-        72
-    )
-
-    data_limite = datetime.now() + timedelta(
-        hours=horas
-    )
-
-    return data_limite.strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-
-EXTENSOES_PERMITIDAS = {
-    "png",
-    "jpg",
-    "jpeg",
-    "pdf"
-}
+    return calcular_prazos(prioridade)["prazo_resolucao"]
 
 STATUS_IA = [
     "Em triagem pela IA",
@@ -106,14 +83,6 @@ STATUS_PERMITIDOS = [
     "Encerrado",
     "Reaberto"
 ]
-
-
-def extensao_permitida(nome_arquivo):
-
-    return (
-        "." in nome_arquivo
-        and nome_arquivo.rsplit(".", 1)[1].lower() in EXTENSOES_PERMITIDAS
-    )
 
 
 def item_grafico(rotulo, valor, classe, total):
@@ -337,9 +306,8 @@ def novo_chamado():
             "%d/%m/%Y %H:%M"
         )
 
-        data_limite = calcular_data_limite(
-            prioridade
-        )
+        prazos_sla = calcular_prazos(prioridade)
+        data_limite = prazos_sla["prazo_resolucao"]
 
         id_chamado = criar_chamado(
             titulo,
@@ -355,7 +323,11 @@ def novo_chamado():
             ai_suggested_priority=prioridade_ia,
             ai_confidence=92,
             ai_status="em_triagem",
-            triage_started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            triage_started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            categoria=categoria_ia,
+            tipo="Solicitação",
+            prazo_primeira_resposta=prazos_sla["prazo_primeira_resposta"],
+            prazo_resolucao=prazos_sla["prazo_resolucao"]
         )
 
         registrar_historico(
@@ -395,8 +367,7 @@ def novo_chamado():
 
         if arquivo and arquivo.filename:
 
-            if extensao_permitida(arquivo.filename):
-
+            try:
                 anexo_salvo = salvar_arquivo_chamado(
                     arquivo,
                     id_chamado
@@ -416,10 +387,9 @@ def novo_chamado():
                     data_criacao
                 )
 
-            else:
-
+            except UploadInvalido as erro:
                 flash(
-                    "Formato de arquivo não permitido. Envie PNG, JPG, JPEG ou PDF.",
+                    str(erro),
                     "warning"
                 )
 
@@ -670,6 +640,12 @@ def visualizar_chamado(id_chamado):
                 status,
                 session["organizacao_id"]
             )
+
+            if resposta:
+                registrar_primeira_resposta_chamado(
+                    id_chamado,
+                    session["organizacao_id"]
+                )
 
             data_atualizacao = datetime.now().strftime(
                 "%d/%m/%Y %H:%M"
@@ -923,11 +899,17 @@ def mensagens_chamado(id_chamado):
 
     if request.method == "POST":
         mensagem = request.form.get("message", "").strip()
+        is_internal = request.form.get("is_internal") == "true"
 
         if not mensagem:
             return jsonify({
                 "error": "Mensagem vazia"
             }), 400
+
+        if is_internal and session["usuario_tipo"] not in ["admin", "suporte"]:
+            return jsonify({
+                "error": "Notas internas são restritas à equipe de atendimento"
+            }), 403
 
         sender_type = "support" if session["usuario_tipo"] in ["admin", "suporte"] else "user"
 
@@ -936,8 +918,22 @@ def mensagens_chamado(id_chamado):
             session["usuario_id"],
             sender_type,
             mensagem,
+            datetime.now().strftime("%d/%m/%Y %H:%M"),
+            is_internal=1 if is_internal else 0
+        )
+
+        registrar_historico(
+            id_chamado,
+            session["usuario_id"],
+            "Nota interna adicionada" if is_internal else "Resposta pública enviada",
             datetime.now().strftime("%d/%m/%Y %H:%M")
         )
+
+        if sender_type == "support":
+            registrar_primeira_resposta_chamado(
+                id_chamado,
+                session["organizacao_id"]
+            )
 
     mensagens = listar_mensagens_chamado(
         id_chamado,
