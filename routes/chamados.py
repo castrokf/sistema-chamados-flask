@@ -40,7 +40,10 @@ from database import (
     adicionar_mensagem_chamado,
     listar_mensagens_chamado,
     contar_chamados_periodo,
-    listar_chamados_admin
+    listar_chamados_admin,
+    atualizar_status_sla_chamado,
+    iniciar_pausa_sla_chamado,
+    encerrar_pausas_sla_chamado
 )
 
 from datetime import datetime
@@ -56,7 +59,11 @@ from services.ai_triage import (
     suggest_category,
     suggest_priority
 )
-from services.sla import calcular_prazos
+from services.sla import (
+    calcular_prazos,
+    calcular_status_chamado,
+    status_pausa_sla
+)
 
 chamados = Blueprint(
     "chamados",
@@ -79,10 +86,69 @@ STATUS_PERMITIDOS = [
     "Pronto para suporte",
     "Em andamento",
     "Aguardando cliente",
+    "Aguardando terceiro",
+    "Aguardando aprovaÃ§Ã£o",
     "Resolvido",
     "Encerrado",
     "Reaberto"
 ]
+
+
+def atualizar_sla_operacional(id_chamado, organizacao_id):
+    chamado_atualizado = buscar_chamado(
+        id_chamado,
+        organizacao_id
+    )
+
+    if not chamado_atualizado:
+        return
+
+    status_sla = calcular_status_chamado(chamado_atualizado)
+    atualizar_status_sla_chamado(
+        id_chamado,
+        status_sla["sla_primeira_resposta_status"],
+        status_sla["sla_resolucao_status"],
+        organizacao_id
+    )
+
+
+def sincronizar_pausa_sla(
+    id_chamado,
+    status_anterior,
+    status_atual,
+    usuario_id,
+    organizacao_id
+):
+    if status_pausa_sla(status_atual):
+        pausa_criada = iniciar_pausa_sla_chamado(
+            id_chamado,
+            status_atual,
+            usuario_id,
+            organizacao_id
+        )
+
+        if pausa_criada and status_anterior != status_atual:
+            registrar_historico(
+                id_chamado,
+                usuario_id,
+                f"SLA pausado: {status_atual}",
+                datetime.now().strftime("%d/%m/%Y %H:%M")
+            )
+
+        return
+
+    pausas_encerradas = encerrar_pausas_sla_chamado(
+        id_chamado,
+        organizacao_id
+    )
+
+    if pausas_encerradas:
+        registrar_historico(
+            id_chamado,
+            usuario_id,
+            "SLA retomado",
+            datetime.now().strftime("%d/%m/%Y %H:%M")
+        )
 
 
 def item_grafico(rotulo, valor, classe, total):
@@ -589,6 +655,18 @@ def visualizar_chamado(id_chamado):
                     session["organizacao_id"]
                 )
 
+                sincronizar_pausa_sla(
+                    id_chamado,
+                    chamado["status"],
+                    "Em andamento",
+                    usuario_logado,
+                    session["organizacao_id"]
+                )
+                atualizar_sla_operacional(
+                    id_chamado,
+                    session["organizacao_id"]
+                )
+
                 registrar_historico(
                     id_chamado,
                     usuario_logado,
@@ -646,6 +724,18 @@ def visualizar_chamado(id_chamado):
                     id_chamado,
                     session["organizacao_id"]
                 )
+
+            sincronizar_pausa_sla(
+                id_chamado,
+                chamado["status"],
+                status,
+                usuario_logado,
+                session["organizacao_id"]
+            )
+            atualizar_sla_operacional(
+                id_chamado,
+                session["organizacao_id"]
+            )
 
             data_atualizacao = datetime.now().strftime(
                 "%d/%m/%Y %H:%M"
@@ -931,6 +1021,10 @@ def mensagens_chamado(id_chamado):
 
         if sender_type == "support":
             registrar_primeira_resposta_chamado(
+                id_chamado,
+                session["organizacao_id"]
+            )
+            atualizar_sla_operacional(
                 id_chamado,
                 session["organizacao_id"]
             )

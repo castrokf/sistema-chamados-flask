@@ -26,6 +26,7 @@ SLA_POR_PRIORIDADE = {
 
 STATUS_PAUSAM_SLA = {
     "Aguardando cliente",
+    "Aguardando informações do cliente",
     "Aguardando terceiro",
     "Aguardando aprovação"
 }
@@ -98,3 +99,7 @@ def calcular_status_chamado(chamado):
             chamado.get("status")
         )
     }
+
+
+def status_pausa_sla(status):
+    return status in STATUS_PAUSAM_SLA

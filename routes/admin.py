@@ -19,7 +19,9 @@ from database import (
     registrar_historico,
     listar_chamados_responsavel,
     buscar_chamado,
-    atualizar_chamado
+    atualizar_chamado,
+    atualizar_status_sla_chamado,
+    encerrar_pausas_sla_chamado
 )
 
 from argon2 import PasswordHasher
@@ -30,6 +32,7 @@ from utils.decorators import (
     equipe_required,
     suporte_required
 )
+from services.sla import calcular_status_chamado
 
 
 admin = Blueprint(
@@ -346,6 +349,31 @@ def assumir_chamado(chamado_id):
             chamado_id,
             chamado["resposta"],
             "Em andamento",
+            session["organizacao_id"]
+        )
+
+        pausas_encerradas = encerrar_pausas_sla_chamado(
+            chamado_id,
+            session["organizacao_id"]
+        )
+
+        if pausas_encerradas:
+            registrar_historico(
+                chamado_id,
+                session["usuario_id"],
+                "SLA retomado",
+                data_atualizacao
+            )
+
+        chamado_atualizado = buscar_chamado(
+            chamado_id,
+            session["organizacao_id"]
+        )
+        status_sla = calcular_status_chamado(chamado_atualizado)
+        atualizar_status_sla_chamado(
+            chamado_id,
+            status_sla["sla_primeira_resposta_status"],
+            status_sla["sla_resolucao_status"],
             session["organizacao_id"]
         )
 

@@ -220,3 +220,120 @@ def test_nota_interna_nao_aparece_para_cliente(client, login, create_user, db_mo
 
     assert resposta_cliente.status_code == 200
     assert mensagens == []
+
+
+def test_resposta_publica_do_suporte_registra_primeira_resposta_sla(
+    client,
+    login,
+    create_user,
+    db_module,
+    csrf_token
+):
+    cliente = create_user(
+        nome="Cliente SLA",
+        email="cliente.sla@teste.com",
+        tipo="cliente",
+    )
+
+    chamado_id = db_module.criar_chamado(
+        "Falha operacional",
+        "Sistema apresenta erro para finalizar atendimento.",
+        "Alta",
+        cliente["id"],
+        "2026-06-01 10:00:00",
+        "2026-06-05 10:00:00",
+        cliente["organizacao_id"],
+        prazo_primeira_resposta="2026-06-05 10:00:00",
+        prazo_resolucao="2026-06-06 10:00:00",
+    )
+
+    login(
+        nome="Suporte SLA",
+        email="suporte.sla@teste.com",
+        tipo="suporte",
+    )
+
+    resposta = client.post(
+        f"/chamado/{chamado_id}/messages",
+        data={
+            "message": "Recebemos sua solicitação e iniciamos a análise.",
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
+        },
+    )
+
+    chamado = db_module.buscar_chamado(chamado_id)
+
+    assert resposta.status_code == 200
+    assert chamado["primeira_resposta_em"] is not None
+    assert chamado["sla_primeira_resposta_status"] == "cumprido"
+
+
+def test_status_de_espera_pausa_e_retomada_sla(
+    client,
+    login,
+    create_user,
+    db_module,
+    csrf_token
+):
+    cliente = create_user(
+        nome="Cliente Pausa",
+        email="cliente.pausa@teste.com",
+        tipo="cliente",
+    )
+
+    chamado_id = db_module.criar_chamado(
+        "Aguardando informação",
+        "Chamado precisa de validação adicional do cliente.",
+        "Média",
+        cliente["id"],
+        "2026-06-01 10:00:00",
+        "2026-06-08 10:00:00",
+        cliente["organizacao_id"],
+        prazo_primeira_resposta="2026-06-05 10:00:00",
+        prazo_resolucao="2026-06-08 10:00:00",
+    )
+
+    login(
+        nome="Admin Pausa",
+        email="admin.pausa@teste.com",
+        tipo="admin",
+    )
+
+    resposta_pausa = client.post(
+        f"/chamado/{chamado_id}",
+        data={
+            "acao": "atualizar_chamado",
+            "resposta": "Precisamos de uma confirmação do solicitante.",
+            "status": "Aguardando cliente",
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
+        },
+        follow_redirects=False,
+    )
+
+    chamado_pausado = db_module.buscar_chamado(chamado_id)
+    pausas = db_module.listar_pausas_sla_chamado(chamado_id)
+
+    assert resposta_pausa.status_code == 302
+    assert chamado_pausado["sla_primeira_resposta_status"] == "pausado"
+    assert chamado_pausado["sla_resolucao_status"] == "pausado"
+    assert len(pausas) == 1
+    assert pausas[0]["ended_at"] is None
+
+    resposta_retomada = client.post(
+        f"/chamado/{chamado_id}",
+        data={
+            "acao": "atualizar_chamado",
+            "resposta": "Informações recebidas. Atendimento retomado.",
+            "status": "Em andamento",
+            "csrf_token": csrf_token(f"/chamado/{chamado_id}"),
+        },
+        follow_redirects=False,
+    )
+
+    chamado_retomado = db_module.buscar_chamado(chamado_id)
+    pausas = db_module.listar_pausas_sla_chamado(chamado_id)
+
+    assert resposta_retomada.status_code == 302
+    assert chamado_retomado["sla_primeira_resposta_status"] == "cumprido"
+    assert chamado_retomado["sla_resolucao_status"] != "pausado"
+    assert pausas[0]["ended_at"] is not None

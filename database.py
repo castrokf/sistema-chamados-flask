@@ -830,6 +830,103 @@ def atualizar_status_sla_chamado(
     """, parametros)
 
 
+def iniciar_pausa_sla_chamado(
+    chamado_id,
+    motivo,
+    criado_por,
+    organizacao_id=None
+):
+    chamado = buscar_chamado(
+        chamado_id,
+        organizacao_id
+    )
+
+    if not chamado:
+        return False
+
+    pausa_aberta = consultar_um("""
+    SELECT id
+    FROM ticket_sla_pauses
+    WHERE ticket_id = :chamado_id
+      AND ended_at IS NULL
+    ORDER BY id DESC
+    LIMIT 1
+    """, {
+        "chamado_id": chamado_id
+    })
+
+    if pausa_aberta:
+        return False
+
+    executar("""
+    INSERT INTO ticket_sla_pauses (
+        ticket_id,
+        started_at,
+        reason,
+        created_by
+    )
+    VALUES (
+        :chamado_id,
+        :agora,
+        :motivo,
+        :criado_por
+    )
+    """, {
+        "chamado_id": chamado_id,
+        "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "motivo": motivo,
+        "criado_por": criado_por
+    })
+
+    return True
+
+
+def encerrar_pausas_sla_chamado(
+    chamado_id,
+    organizacao_id=None
+):
+    chamado = buscar_chamado(
+        chamado_id,
+        organizacao_id
+    )
+
+    if not chamado:
+        return 0
+
+    pausas_abertas = consultar_scalar("""
+    SELECT COUNT(*)
+    FROM ticket_sla_pauses
+    WHERE ticket_id = :chamado_id
+      AND ended_at IS NULL
+    """, {
+        "chamado_id": chamado_id
+    }) or 0
+
+    if pausas_abertas:
+        executar("""
+        UPDATE ticket_sla_pauses
+        SET ended_at = :agora
+        WHERE ticket_id = :chamado_id
+          AND ended_at IS NULL
+        """, {
+            "chamado_id": chamado_id,
+            "agora": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    return pausas_abertas
+
+
+def listar_pausas_sla_chamado(chamado_id):
+    return consultar_lista("""
+    SELECT *
+    FROM ticket_sla_pauses
+    WHERE ticket_id = :chamado_id
+    ORDER BY id ASC
+    """, {
+        "chamado_id": chamado_id
+    })
+
+
 def contar_chamados_usuario(usuario_id):
     return consultar_scalar("""
     SELECT COUNT(*)
