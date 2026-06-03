@@ -20,7 +20,7 @@
     <div class="detail-tabs">
         <span class="detail-tab active">Resumo</span>
         <span class="detail-tab">Conversa e tratativa</span>
-        <span class="detail-tab">Triagem IA</span>
+        <span class="detail-tab">Análise assistida</span>
         <span class="detail-tab">Anexos</span>
         <span class="detail-tab">Histórico</span>
         {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
@@ -32,7 +32,7 @@
         <article class="metric-card metric-teal">
             <div class="metric-icon"><i data-lucide="calendar-clock"></i></div>
             <div>
-                <span>SLA</span>
+                <span>Prazo</span>
                 <strong>{{ chamado.data_limite or "-" }}</strong>
                 <p>Prazo operacional previsto</p>
             </div>
@@ -117,7 +117,7 @@
     <article class="content-card">
         <div class="content-card-header">
             <div>
-                <h2>Triagem IA</h2>
+                <h2>Análise assistida</h2>
                 <p>Perguntas, categoria sugerida e nível de confiança da análise.</p>
             </div>
             <span class="ai-pill">IA</span>

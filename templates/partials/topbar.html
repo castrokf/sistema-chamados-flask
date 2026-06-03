@@ -3,50 +3,61 @@
     "suporte": "Suporte",
     "cliente": "Solicitante"
 } %}
+{% set tipo = session.get("usuario_tipo") %}
+{% set path = request.path %}
 
-<header class="topbar">
+<header class="portal-header">
 
-    <button
-        type="button"
-        class="sidebar-toggle"
-        data-sidebar-toggle
-        aria-label="Abrir menu"
-    >
-        <i data-lucide="menu"></i>
-    </button>
-
-    <div class="topbar-heading">
-        <h1>{{ page_heading|default("Centro de controle") }}</h1>
-        {% if page_heading|default("Centro de controle") == "Centro de controle" %}
-            <p
-                data-dynamic-greeting
-                data-user-name="{{ session.get('usuario_nome', 'usuário') }}"
+    <a href="/dashboard" class="portal-brand" aria-label="Ir para o início">
+        <span class="portal-brand-icon">
+            <img
+                src="{{ url_for('static', filename='img/logo.svg') }}"
+                alt="Logo Nortia"
             >
-                Bem-vindo, {{ session.get("usuario_nome", "usuário") }}.
-            </p>
+        </span>
+        <strong>Nortia</strong>
+    </a>
+
+    <nav class="portal-nav" aria-label="Navegação principal">
+        <a href="/dashboard" class="{% if path == '/dashboard' %}is-active{% endif %}">
+            Início
+        </a>
+
+        {% if tipo in ["admin", "suporte"] %}
+            <a href="/admin" class="{% if path == '/admin' %}is-active{% endif %}">
+                Central
+            </a>
         {% else %}
-            <p>
-                {{ page_subtitle|default("Bem-vindo, " ~ session.get("usuario_nome", "usuário") ~ ".") }}
-            </p>
+            <a href="/meus_chamados" class="{% if path == '/meus_chamados' %}is-active{% endif %}">
+                Solicitações
+            </a>
         {% endif %}
-    </div>
 
-    <div class="topbar-tools">
-        <form action="/dashboard" method="GET" class="topbar-search" role="search">
-            <i data-lucide="search"></i>
-            <input
-                type="search"
-                name="q"
-                value="{{ request.args.get('q', '') }}"
-                placeholder="Buscar chamados, usuários ou IDs..."
-                aria-label="Buscar chamados, usuários ou IDs"
-            >
-        </form>
+        <a href="/novo_chamado" class="{% if path == '/novo_chamado' %}is-active{% endif %}">
+            Nova solicitação
+        </a>
+
+        <a href="/central-ajuda" class="{% if path.startswith('/central-ajuda') %}is-active{% endif %}">
+            Base de conhecimento
+        </a>
+
+        {% if tipo in ["admin", "suporte"] %}
+            <a href="/relatorios" class="{% if path.startswith('/relatorios') %}is-active{% endif %}">
+                Indicadores
+            </a>
+        {% endif %}
+    </nav>
+
+    <div class="portal-actions">
+        <span class="portal-restricted">
+            <i data-lucide="shield-check"></i>
+            Ambiente restrito
+        </span>
 
         <div
             class="notification-menu"
             data-notification-menu
-            data-user-role="{{ session.get('usuario_tipo', 'cliente') }}"
+            data-user-role="{{ tipo|default('cliente') }}"
         >
             <button
                 type="button"
@@ -62,7 +73,7 @@
             <div class="notification-dropdown" data-notification-dropdown>
                 <div class="notification-dropdown-header">
                     <strong>Notificações</strong>
-                    <span>Resumo atualizado da operação</span>
+                    <span>Atualizações recentes do ambiente</span>
                 </div>
 
                 <div class="notification-list" data-notification-list>
@@ -70,10 +81,10 @@
                 </div>
 
                 <a
-                    href="{% if session.get('usuario_tipo') in ['admin', 'suporte'] %}/admin{% else %}/meus_chamados{% endif %}"
+                    href="{% if tipo in ['admin', 'suporte'] %}/admin{% else %}/meus_chamados{% endif %}"
                     class="notification-footer"
                 >
-                    Ver central de acompanhamento
+                    Ver acompanhamento
                     <i data-lucide="arrow-right"></i>
                 </a>
             </div>
@@ -82,9 +93,9 @@
         <div class="profile-menu" data-profile-menu>
             <button
                 type="button"
-                class="topbar-user profile-trigger"
+                class="portal-user profile-trigger"
                 data-profile-toggle
-                aria-label="Abrir perfil corporativo"
+                aria-label="Abrir perfil"
                 aria-expanded="false"
             >
                 <div class="avatar">
@@ -93,7 +104,7 @@
 
                 <div>
                     <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
-                    <span>{{ role_labels.get(session.get("usuario_tipo"), "Solicitante") }}</span>
+                    <span>{{ role_labels.get(tipo, "Solicitante") }}</span>
                 </div>
 
                 <i data-lucide="chevron-down"></i>
@@ -102,7 +113,7 @@
             <div class="profile-dropdown" data-profile-dropdown>
                 <div class="profile-dropdown-header">
                     <strong>{{ session.get("usuario_nome", "Usuário") }}</strong>
-                    <span>{{ role_labels.get(session.get("usuario_tipo"), "Solicitante") }} Nortia</span>
+                    <span>{{ role_labels.get(tipo, "Solicitante") }} Nortia</span>
                 </div>
 
                 <a href="/perfil">
@@ -112,20 +123,13 @@
 
                 <a href="/configuracoes">
                     <i data-lucide="settings"></i>
-                    Configurações administrativas
+                    Preferências do ambiente
                 </a>
 
-                {% if session.get("usuario_tipo") == "admin" %}
+                {% if tipo == "admin" %}
                     <a href="/admin/usuarios">
                         <i data-lucide="shield-check"></i>
                         Gestão de acessos
-                    </a>
-                {% endif %}
-
-                {% if session.get("usuario_tipo") in ["admin", "suporte"] %}
-                    <a href="/admin">
-                        <i data-lucide="briefcase-business"></i>
-                        Central corporativa
                     </a>
                 {% endif %}
 
@@ -138,3 +142,13 @@
     </div>
 
 </header>
+
+<section class="portal-page-heading">
+    <div>
+        <span class="portal-eyebrow">Portal interno</span>
+        <h1>{{ page_heading|default("Início") }}</h1>
+        <p>
+            {{ page_subtitle|default("Acompanhe suas solicitações, registros e atualizações em um ambiente corporativo reservado.") }}
+        </p>
+    </div>
+</section>

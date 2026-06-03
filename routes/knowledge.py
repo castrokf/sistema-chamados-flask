@@ -42,8 +42,8 @@ def central_ajuda():
         artigos=artigos,
         pesquisa=pesquisa,
         page_title="Central de Ajuda - Nortia",
-        page_heading="Central de Ajuda",
-        page_subtitle="Base de conhecimento para orientar usuários e equipe de atendimento"
+        page_heading="Base de conhecimento",
+        page_subtitle="Orientações para uso do portal e padronização das solicitações internas"
     )
 
 

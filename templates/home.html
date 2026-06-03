@@ -4,7 +4,6 @@
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Nortia</title>
@@ -15,117 +14,162 @@
     >
 
     <link
-        href="{{ url_for('static', filename='css/style.css') }}?v=17"
+        href="{{ url_for('static', filename='css/style.css') }}?v=19"
         rel="stylesheet"
     >
 
 </head>
 
-<body>
+<body class="site-body">
 
-    <main class="public-showcase">
-
-        <section class="public-panel">
-
-            <div class="public-logo">
+    <header class="site-header">
+        <a href="/" class="site-brand" aria-label="Nortia">
+            <span class="site-brand-icon">
                 <img
                     src="{{ url_for('static', filename='img/logo.svg') }}"
-                    alt="Logo do Nortia"
+                    alt="Logo Nortia"
                 >
-            </div>
-
-            <span class="public-brand">
-                Nortia
             </span>
+            <strong>Nortia</strong>
+        </a>
 
-            <h1>
-                Atendimento interno
-                <span>com padrão</span>
-                <strong>profissional</strong>
-            </h1>
+        <nav class="site-nav" aria-label="Navegação pública">
+            <a href="/" class="is-active">Início</a>
+            <a href="/login">Acesso</a>
+            <a href="/central-ajuda">Base de conhecimento</a>
+        </nav>
 
-            <div class="public-accent"></div>
+        <div class="site-header-status">
+            <span>
+                <i data-lucide="shield-check"></i>
+                Ambiente restrito
+            </span>
+            <a href="/login" class="site-login-link">Entrar</a>
+        </div>
+    </header>
 
-            <p>
-                Centralize chamados, responsáveis, prazos, comentários e anexos em uma operação controlada para equipes internas de atendimento.
-            </p>
+    <main class="site-main">
 
-            <a
-                href="/login"
-                class="public-cta"
-            >
-                <span>Acessar Nortia</span>
-                <span aria-hidden="true">→</span>
-            </a>
+        <section class="site-hero">
+            <div class="site-hero-copy">
+                <span class="site-pill">
+                    <i data-lucide="lock"></i>
+                    Bem-vindo(a) ao Nortia
+                </span>
 
-            <div class="public-note-line"></div>
+                <h1>
+                    Portal interno para
+                    <span>solicitações corporativas</span>
+                    com acesso reservado
+                </h1>
 
-            <div class="public-note-modern">
-                <span aria-hidden="true">◇</span>
                 <p>
-                    Acesso restrito a usuários previamente cadastrados pela equipe responsável.
+                    Um ambiente privado para registrar, acompanhar e organizar solicitações entre equipes autorizadas, mantendo clareza, continuidade e segurança em cada atendimento.
                 </p>
+
+                <div class="site-hero-actions">
+                    <a href="/login" class="site-button-primary">
+                        <i data-lucide="log-in"></i>
+                        Acessar portal
+                    </a>
+
+                    <a href="/central-ajuda" class="site-button-secondary">
+                        <i data-lucide="book-open"></i>
+                        Consultar orientações
+                    </a>
+                </div>
             </div>
 
+            <figure class="site-hero-media">
+                <img
+                    src="{{ url_for('static', filename='img/nortia-private-hero.png') }}"
+                    alt="Ambiente corporativo reservado com recepção moderna e salas privativas"
+                >
+            </figure>
         </section>
 
-        <section class="public-visual">
+        <section class="site-content-grid">
+            <div>
+                <h2>Acesso rápido</h2>
 
-            <img
-                src="{{ url_for('static', filename='img/nortia-team-hero.png') }}"
-                alt="Equipe interna acompanhando chamados em um escritório moderno"
-            >
+                <div class="quick-access-grid">
+                    <a href="/login" class="quick-card">
+                        <span><i data-lucide="plus-square"></i></span>
+                        <strong>Abrir solicitação</strong>
+                        <p>Registre uma necessidade com contexto claro e acompanhamento centralizado.</p>
+                        <i data-lucide="arrow-right"></i>
+                    </a>
 
-            <div class="metric-card metric-card-small">
-                <span class="metric-icon" aria-hidden="true">☏</span>
-                <div>
-                    <p>Chamados em andamento</p>
-                    <strong>24</strong>
-                    <small>vs. último período</small>
-                </div>
-                <span class="metric-trend">↘ 12%</span>
-            </div>
+                    <a href="/login" class="quick-card">
+                        <span><i data-lucide="list-checks"></i></span>
+                        <strong>Acompanhar registros</strong>
+                        <p>Consulte atualizações, responsáveis e próximos passos em um único lugar.</p>
+                        <i data-lucide="arrow-right"></i>
+                    </a>
 
-            <div class="metric-card metric-card-large">
-                <h2>Categorias mais acessadas</h2>
-
-                <div class="category-row">
-                    <span>Suporte de TI</span>
-                    <strong>38%</strong>
-                </div>
-
-                <div class="category-row">
-                    <span>Solicitações</span>
-                    <strong>27%</strong>
+                    <a href="/central-ajuda" class="quick-card">
+                        <span><i data-lucide="book-open"></i></span>
+                        <strong>Base de conhecimento</strong>
+                        <p>Encontre orientações e respostas para dúvidas recorrentes do ambiente.</p>
+                        <i data-lucide="arrow-right"></i>
+                    </a>
                 </div>
 
-                <div class="category-row">
-                    <span>Acesso e Permissões</span>
-                    <strong>18%</strong>
-                </div>
-
-                <div class="category-row">
-                    <span>Outros</span>
-                    <strong>17%</strong>
-                </div>
-
-                <div class="donut-chart" aria-hidden="true"></div>
-            </div>
-
-            <div class="metric-card metric-card-floating">
-                <span class="check-bubble" aria-hidden="true">✓</span>
-                <div>
-                    <strong>Atendimento padronizado</strong>
-                    <p>Mais agilidade, controle e visibilidade para a sua equipe.</p>
+                <div class="site-help-strip">
+                    <span><i data-lucide="info"></i></span>
+                    <div>
+                        <strong>Dúvidas sobre o acesso?</strong>
+                        <p>Procure a equipe responsável da sua organização para liberação ou atualização de credenciais.</p>
+                    </div>
+                    <a href="/central-ajuda">
+                        Ir para orientações
+                        <i data-lucide="external-link"></i>
+                    </a>
                 </div>
             </div>
 
+            <aside class="commitment-card">
+                <h2>Nosso compromisso</h2>
+
+                <div class="commitment-item">
+                    <span><i data-lucide="shield-check"></i></span>
+                    <div>
+                        <strong>Fluxo seguro</strong>
+                        <p>Processos controlados e acesso restrito para preservar informações internas.</p>
+                    </div>
+                </div>
+
+                <div class="commitment-item">
+                    <span><i data-lucide="users-round"></i></span>
+                    <div>
+                        <strong>Gestão centralizada</strong>
+                        <p>Solicitações reunidas em um ambiente organizado, com histórico e continuidade.</p>
+                    </div>
+                </div>
+
+                <div class="commitment-item">
+                    <span><i data-lucide="check-circle-2"></i></span>
+                    <div>
+                        <strong>Atendimento padronizado</strong>
+                        <p>Boas práticas, clareza na comunicação e acompanhamento entre equipes.</p>
+                    </div>
+                </div>
+            </aside>
         </section>
+
+        <footer class="site-footer">
+            <span>
+                <i data-lucide="lock"></i>
+                Ambiente restrito e monitorado
+            </span>
+            <span>Nortia © 2026 - Todos os direitos reservados.</span>
+        </footer>
 
     </main>
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
     </script>
 
 </body>

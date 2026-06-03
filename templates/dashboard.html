@@ -13,7 +13,7 @@
 </div>
 
 <section class="metrics-grid dashboard-metrics">
-    {{ metric_card("Total", total, "Carteira de chamados", "tickets", "teal") }}
+    {{ metric_card("Total", total, "Carteira de registros", "tickets", "teal") }}
     {{ metric_card("Abertos", abertos, "Aguardando primeira análise", "clock-3", "orange") }}
     {{ metric_card("Em atendimento", andamento, "Em tratativa pela equipe", "activity", "blue") }}
     {{ metric_card("Resolvidos", resolvidos, "Concluídos no ciclo atual", "check-circle-2", "green") }}
@@ -67,8 +67,8 @@
     <article class="content-card ai-triage-card compact-card">
         <div class="content-card-header">
             <div>
-                <h2>Triagem Inteligente</h2>
-                <p>Qualificação automatizada para acelerar o encaminhamento ao suporte.</p>
+                <h2>Análise assistida</h2>
+                <p>Organização inicial das informações para facilitar o encaminhamento.</p>
             </div>
 
             <span class="ai-pill">IA</span>
@@ -92,7 +92,7 @@
         </div>
 
         <a href="/triagem-inteligente" class="app-button-primary mt-3">
-            Acessar triagem
+            Acessar análise
             <i data-lucide="arrow-right"></i>
         </a>
     </article>
@@ -124,7 +124,7 @@
                     {% endif %}
                     <th>Status</th>
                     <th>Prioridade</th>
-                    <th>SLA</th>
+                    <th>Prazo</th>
                     <th>Data</th>
                     <th>Ação</th>
                 </tr>

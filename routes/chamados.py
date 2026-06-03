@@ -131,7 +131,7 @@ def sincronizar_pausa_sla(
             registrar_historico(
                 id_chamado,
                 usuario_id,
-                f"SLA pausado: {status_atual}",
+                f"Prazo de atendimento pausado: {status_atual}",
                 datetime.now().strftime("%d/%m/%Y %H:%M")
             )
 
@@ -146,7 +146,7 @@ def sincronizar_pausa_sla(
         registrar_historico(
             id_chamado,
             usuario_id,
-            "SLA retomado",
+            "Prazo de atendimento retomado",
             datetime.now().strftime("%d/%m/%Y %H:%M")
         )
 
@@ -257,9 +257,9 @@ def dashboard():
             "dashboard.html",
             nome=session["usuario_nome"],
             tipo_usuario=usuario_tipo,
-            page_title="Dashboard - Nortia",
-            page_heading="Centro de controle",
-            page_subtitle=f"Bem-vindo, {session['usuario_nome']}.",
+            page_title="Início - Nortia",
+            page_heading="Início",
+            page_subtitle=f"Bem-vindo, {session['usuario_nome']}. Acompanhe seus registros e próximos passos em um ambiente reservado.",
             total=total,
             abertos=abertos,
             andamento=andamento,
@@ -327,9 +327,9 @@ def dashboard():
         "dashboard.html",
         nome=session["usuario_nome"],
         tipo_usuario=usuario_tipo,
-        page_title="Dashboard - Nortia",
-        page_heading="Centro de controle",
-        page_subtitle=f"Bem-vindo, {session['usuario_nome']}.",
+        page_title="Início - Nortia",
+        page_heading="Início",
+        page_subtitle=f"Bem-vindo, {session['usuario_nome']}. Acompanhe seus registros e próximos passos em um ambiente reservado.",
         total=total,
         abertos=abertos,
         andamento=andamento,
@@ -470,7 +470,7 @@ def novo_chamado():
         "novo_chamado.html",
         page_title="Nova solicitação - Nortia",
         page_heading="Nova solicitação",
-        page_subtitle="Descreva o contexto para iniciar a triagem inteligente e acelerar o atendimento"
+        page_subtitle="Informe o contexto da solicitação para facilitar o direcionamento e reduzir retornos desnecessários"
     )
 
 
@@ -507,7 +507,7 @@ def meus_chamados():
         pesquisa=pesquisa,
         page_title="Minhas solicitações - Nortia",
         page_heading="Minhas solicitações",
-        page_subtitle="Acompanhe solicitações, prazos e atualizações da equipe de atendimento"
+        page_subtitle="Consulte registros, prazos previstos e atualizações em andamento"
     )
 
 
@@ -780,7 +780,7 @@ def visualizar_chamado(id_chamado):
         perguntas_ia=perguntas_ia,
         page_title=f"Chamado CH-{id_chamado:04d} - Nortia",
         page_heading=f"Chamado CH-{id_chamado:04d}",
-        page_subtitle="Resumo executivo, tratativa e apoio da triagem inteligente"
+        page_subtitle="Resumo, conversa, anexos e histórico do registro"
     )
 
 # =========================
@@ -922,9 +922,9 @@ def triagem_inteligente():
         chamados=chamados_triagem,
         status=status,
         status_ia=STATUS_IA,
-        page_title="Triagem Inteligente - Nortia",
-        page_heading="Triagem Inteligente",
-        page_subtitle="Monitore solicitações analisadas pela IA antes da atuação do suporte"
+        page_title="Análise assistida - Nortia",
+        page_heading="Análise assistida",
+        page_subtitle="Acompanhe registros que ainda precisam de informações ou direcionamento"
     )
 
 
@@ -933,9 +933,9 @@ def triagem_inteligente():
 def relatorios():
     return render_template(
         "relatorios.html",
-        page_title="Relatórios - Nortia",
-        page_heading="Relatórios",
-        page_subtitle="Acompanhe tendências, status e indicadores de atendimento"
+        page_title="Indicadores - Nortia",
+        page_heading="Indicadores",
+        page_subtitle="Analise volumes, prazos e evolução dos registros corporativos"
     )
 
 
@@ -946,7 +946,7 @@ def configuracoes():
         "configuracoes.html",
         page_title="Configurações - Nortia",
         page_heading="Configurações",
-        page_subtitle="Parâmetros operacionais, integrações e preparação para automações"
+        page_subtitle="Preferências do ambiente, integrações e recursos administrativos"
     )
 
 

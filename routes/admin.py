@@ -71,8 +71,8 @@ def painel_admin():
         responsavel_id=responsavel_id,
         administradores=administradores,
         page_title="Central de atendimento - Nortia",
-        page_heading="Central de atendimento",
-        page_subtitle="Controle a fila, priorize solicitações e direcione demandas para o suporte"
+        page_heading="Central",
+        page_subtitle="Organize registros, responsáveis e próximos passos da operação"
     )
 
 @admin.route("/admin/usuarios")
@@ -302,7 +302,7 @@ def meus_atendimentos():
         administradores=administradores,
         page_title="Meus atendimentos - Nortia",
         page_heading="Minha fila de atendimento",
-        page_subtitle="Acompanhe solicitações atribuídas à sua responsabilidade técnica"
+        page_subtitle="Acompanhe os registros atribuídos à sua responsabilidade"
     )
 
 @admin.route(
@@ -361,7 +361,7 @@ def assumir_chamado(chamado_id):
             registrar_historico(
                 chamado_id,
                 session["usuario_id"],
-                "SLA retomado",
+                "Prazo de atendimento retomado",
                 data_atualizacao
             )
 
