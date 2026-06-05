@@ -285,7 +285,7 @@ def aplicar_identidade_corporativa_padrao():
         })
 
     for email_antigo, email_novo, nome_novo in [
-        ("admin@demo.com", "admin@nortia.internal", "Administrador Nortia"),
+        ("admin@demo.com", "admin@nortia.internal", "Luan Castro"),
         ("suporte1@demo.com", "marina.atendimento@nortia.internal", "Marina Atendimento"),
         ("suporte2@demo.com", "rafael.operacoes@nortia.internal", "Rafael Operações"),
         ("ana.martins@demo.com", "ana.martins@nortia.internal", "Ana Martins"),

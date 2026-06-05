@@ -24,7 +24,7 @@ ACCESS_PASSWORD = "Nortia@2026"
 
 
 USUARIOS_EQUIPE = [
-    ("Administrador Nortia", "admin@nortia.internal", "admin"),
+    ("Luan Castro", "admin@nortia.internal", "admin"),
     ("Marina Atendimento", "marina.atendimento@nortia.internal", "suporte"),
     ("Rafael Operações", "rafael.operacoes@nortia.internal", "suporte"),
 ]
