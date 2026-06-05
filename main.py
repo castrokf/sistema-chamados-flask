@@ -96,6 +96,16 @@ def home():
 
     return render_template("home.html")
 
+
+@app.route("/orientacoes")
+@app.route("/base-conhecimento")
+def orientacoes_publicas():
+
+    if sessao_autenticada():
+        return redirect("/central-ajuda")
+
+    return render_template("orientacoes_publicas.html")
+
 @app.errorhandler(413)
 def arquivo_muito_grande(error):
 
